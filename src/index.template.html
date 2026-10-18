@@ -1,0 +1,1132 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#003B7A">
+  <title>Registro QR · Señor de los Milagros 2026 - SEDAPAL</title>
+  <link rel="icon" id="favicon" href="">
+  <script>const LOGOS = { sedapal: '__LOGO_SEDAPAL__', kolh: '__LOGO_KOLH__' };</script>
+  <!-- Librerías por CDN (sin npm, sin build): generación de QR, lectura de QR con cámara, exportación Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --sedapal-blue: #003B7A;
+      --sedapal-light: #0066CC;
+      --sedapal-accent: #00A859;
+      --sedapal-bg: #f5f5f5;
+      --evento: #5B2C83;        /* morado del Señor de los Milagros: solo ticket y botón principal */
+      --evento-light: #7B4BA6;
+      --texto: #1f2937;
+      --muted: #6b7280;
+      --borde: #e2e6ea;
+      --rojo: #c62828;
+      --verde: #2e7d32;
+      --ambar: #b26a00;
+      --radio: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+      background: var(--sedapal-bg); color: var(--texto);
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+    main { flex: 1; }
+    .container { max-width: 520px; margin: 0 auto; padding: 16px 16px 24px; }
+    .oculto { display: none !important; }
+    .centro { text-align: center; }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+    h2 { font-size: 20px; color: var(--sedapal-blue); margin-bottom: 4px; }
+
+    /* Cabecera institucional */
+    .header-sedapal {
+      background: var(--sedapal-blue); color: #fff; padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .header-sedapal .logo { height: 40px; background: #fff; border-radius: 6px; padding: 2px 8px; }
+    .header-sedapal .titulos { flex: 1; min-width: 0; }
+    .header-sedapal .titulo { font-size: 17px; font-weight: 700; line-height: 1.2; }
+    .header-sedapal .sub { font-size: 12px; opacity: .85; }
+    .hdr-link { color: #fff; font-size: 13px; text-decoration: none; border: 1px solid rgba(255,255,255,.6); padding: 8px 14px; border-radius: 20px; white-space: nowrap; }
+
+    /* Pie */
+    footer {
+      background: #fff; border-top: 1px solid var(--borde); padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted);
+    }
+    footer .foot-links a { color: var(--sedapal-light); text-decoration: none; }
+    footer .logo-kolh { height: 26px; }
+
+    /* Tarjetas, campos y botones */
+    .card { background: #fff; border-radius: var(--radio); padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 14px; }
+    .bienvenida { position: relative; overflow: hidden; }
+    .bienvenida::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--evento); }
+    .evento-nombre { font-size: 20px; font-weight: 700; color: var(--evento); }
+    .evento-fecha { font-size: 14px; color: var(--muted); margin: 2px 0 8px; }
+    .badge { display: inline-block; background: var(--ambar); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 20px; margin-top: 8px; }
+    .campo { margin-bottom: 14px; }
+    .campo label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .campo input {
+      width: 100%; font-size: 16px; padding: 12px; border: 1px solid #cfd6dd; border-radius: 8px; background: #fff; color: var(--texto);
+    }
+    .campo input:focus { outline: 2px solid var(--sedapal-light); border-color: var(--sedapal-light); }
+    .campo input.invalido { border-color: var(--rojo); }
+    .error-campo { color: var(--rojo); font-size: 13px; margin-top: 4px; }
+    .error-global { background: #fdecea; color: var(--rojo); padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-top: 12px; }
+    .aviso-amarillo { background: #fff6dd; color: #7a5300; padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-top: 8px; }
+    .aviso-rojo { background: #fdecea; color: var(--rojo); font-weight: 600; }
+    .aviso-verde { background: #e8f5e9; color: var(--verde); padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 48px; padding: 10px 18px; border-radius: 10px; border: 1px solid transparent;
+      font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: filter .15s;
+    }
+    .btn:disabled { opacity: .6; cursor: wait; }
+    .btn:not(:disabled):active { filter: brightness(.92); }
+    .btn-block { width: 100%; }
+    .btn-primary { background: var(--evento); color: #fff; }
+    .btn-sedapal { background: var(--sedapal-blue); color: #fff; }
+    .btn-ok { background: var(--verde); color: #fff; font-size: 20px; min-height: 60px; }
+    .btn-danger { background: var(--rojo); color: #fff; }
+    .btn-ghost { background: #fff; color: var(--sedapal-blue); border-color: #c9d3de; }
+    .btn-sm { min-height: 38px; padding: 6px 12px; font-size: 14px; }
+    .link { background: none; border: none; color: var(--sedapal-light); font-size: 14px; cursor: pointer; text-decoration: underline; padding: 0; }
+    .acciones { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .acciones.fila { flex-direction: row; flex-wrap: wrap; }
+    .acciones.fila .btn { flex: 1 1 140px; }
+    .check { display: flex; align-items: center; gap: 10px; font-size: 16px; margin: 4px 0 16px; }
+    .check input { width: 22px; height: 22px; accent-color: var(--evento); }
+    .check.deshabilitado { opacity: .5; }
+    .segmento { display: flex; border: 1px solid #c9d3de; border-radius: 10px; overflow: hidden; }
+    .segmento .seg { flex: 1; min-height: 46px; padding: 10px 12px; background: #fff; border: none; font-size: 15px; font-weight: 600; color: var(--sedapal-blue); cursor: pointer; }
+    .segmento .seg.activo { background: var(--sedapal-blue); color: #fff; }
+
+    /* Ticket */
+    .ticket { background: #fff; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.12); overflow: hidden; padding-bottom: 16px; }
+    .ticket-banda { background: linear-gradient(135deg, var(--evento), var(--evento-light)); color: #fff; padding: 14px 16px; }
+    .ticket-banda.tardio { background: linear-gradient(135deg, #6b7280, #9ca3af); }
+    .ticket-evento { font-size: 18px; font-weight: 700; }
+    .ticket-sub { font-size: 12px; opacity: .9; }
+    .ticket > :not(.ticket-banda) { margin-left: 16px; margin-right: 16px; }
+    .qr-wrap { display: flex; justify-content: center; padding: 18px 0 8px; }
+    #qr { width: 220px; height: 220px; background: #fff; }
+    #qr img, #qr canvas { width: 220px !important; height: 220px !important; display: block; }
+    .ticket-id { text-align: center; font-family: ui-monospace, 'Consolas', monospace; font-size: 20px; letter-spacing: 2px; font-weight: 700; color: var(--evento); }
+    .ticket-nombre { text-align: center; font-size: 20px; font-weight: 700; margin-top: 8px; }
+    .ticket-datos { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; }
+    .chip { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 20px; background: #eef1f4; color: var(--muted); }
+    .chip.ok { background: #e8f5e9; color: var(--verde); }
+    .chip.pend { background: #fff6dd; color: #7a5300; }
+    .chip.no { background: #fdecea; color: var(--rojo); }
+
+    /* Staff: validador y panel */
+    .barra-staff { display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin-bottom: 10px; color: var(--muted); }
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .tab { flex: 1; min-height: 42px; padding: 8px 12px; border-radius: 10px; border: 1px solid #c9d3de; background: #fff; font-size: 15px; font-weight: 600; color: var(--sedapal-blue); cursor: pointer; }
+    .tab.activo { background: var(--sedapal-blue); color: #fff; border-color: var(--sedapal-blue); }
+    #reader { width: 100%; max-width: 340px; margin: 0 auto; border-radius: 10px; overflow: hidden; background: #111; min-height: 60px; }
+    #reader video { width: 100% !important; }
+    /* Tarjeta de resultado del validador: el estado se lee por el color de toda la tarjeta, no por una barra lateral */
+    .resultado { border: 1px solid #c9d3de; }
+    .resultado.ok { background: #e8f5e9; border-color: #a5d6a7; }
+    .resultado.ya { background: #fdecea; border-color: #ef9a9a; }
+    .resultado.no { background: #fff6dd; border-color: #ffd180; }
+    .resultado .r-estado { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+    .resultado.ok .r-estado { color: var(--verde); }
+    .resultado.ya .r-estado { color: var(--rojo); }
+    .resultado.no .r-estado { color: var(--ambar); }
+    .resultado .r-nombre { font-size: 24px; font-weight: 700; margin: 6px 0 2px; }
+    .resultado .r-datos { color: var(--muted); font-size: 14px; }
+    .lista .item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--borde); }
+    .lista .item:last-child { border-bottom: none; }
+    .lista .i-nombre { font-weight: 600; font-size: 15px; }
+    .lista .i-datos { font-size: 13px; color: var(--muted); }
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .kpi { background: #fff; border-radius: var(--radio); padding: 14px 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .kpi-n { font-size: 28px; font-weight: 800; color: var(--sedapal-blue); line-height: 1.1; }
+    .kpi-l { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .kpi-evento .kpi-n { color: var(--evento); }
+    .kpi-ok .kpi-n { color: var(--verde); }
+    .kpi-pend .kpi-n { color: var(--ambar); }
+    .kpi-no .kpi-n { color: var(--rojo); }
+    .estado-linea { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--borde); font-size: 14px; }
+    .estado-linea:last-child { border-bottom: none; }
+    .estado-linea b.abierto { color: var(--verde); }
+    .estado-linea b.cerrado { color: var(--rojo); }
+    .tabla-wrap { overflow-x: auto; }
+    .tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tabla th, .tabla td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--borde); white-space: nowrap; }
+    .tabla th { color: var(--muted); font-weight: 600; font-size: 12px; }
+    .si { color: var(--verde); font-weight: 700; }
+    .no { color: var(--muted); }
+    .tardio-txt { color: var(--rojo); font-weight: 700; }
+
+    /* Modales y toast */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+    .modal-caja { background: #fff; border-radius: 16px; padding: 22px; max-width: 420px; width: 100%; text-align: center; }
+    .modal-caja h3 { color: var(--sedapal-blue); margin-bottom: 6px; }
+    .modal-caja .logos { display: flex; justify-content: center; align-items: center; gap: 22px; margin: 14px 0; }
+    .modal-caja .logos img { height: 46px; }
+    #qr-evento { display: flex; justify-content: center; margin: 14px 0; }
+    #qr-evento img, #qr-evento canvas { width: 260px !important; height: 260px !important; }
+    .url-evento { font-size: 12px; color: var(--muted); word-break: break-all; }
+    #toast {
+      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+      background: #1f2937; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 14px;
+      opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 60; max-width: 90vw; text-align: center;
+    }
+    #toast.visible { opacity: 1; }
+    #toast.error { background: var(--rojo); }
+    #toast.ok { background: var(--verde); }
+    #banner-config { background: var(--ambar); color: #fff; font-size: 13px; padding: 8px 16px; text-align: center; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #modal-qr-evento, #modal-qr-evento * { visibility: visible; }
+      #modal-qr-evento { position: absolute; inset: 0; background: #fff; padding: 0; }
+      #modal-qr-evento .modal-caja { box-shadow: none; max-width: none; }
+      #modal-qr-evento .btn { display: none; }
+    }
+    @media (min-width: 640px) { .container { padding-top: 24px; } .header-sedapal .titulo { font-size: 20px; } }
+  </style>
+</head>
+<body>
+
+  <header class="header-sedapal">
+    <img data-logo="sedapal" alt="SEDAPAL" class="logo">
+    <div class="titulos">
+      <div class="titulo" id="hdr-titulo">Señor de los Milagros 2026</div>
+      <div class="sub">Equipo Gestión Comercial y Micromedición (EGCM) · SEDAPAL</div>
+    </div>
+    <a href="#ticket" id="lnk-ticket" class="hdr-link oculto">Mi ticket</a>
+  </header>
+  <div id="banner-config" class="oculto">Falta configurar GAS_URL en index.html (ver README).</div>
+
+  <main id="app">
+
+    <!-- ===================== REGISTRO / KIOSCO (RF-01, RF-02, RF-11, RF-12, RF-15) ===================== -->
+    <section id="view-registro" class="view oculto">
+      <div class="container">
+        <div class="card bienvenida">
+          <div class="evento-nombre" id="reg-evento">Señor de los Milagros 2026</div>
+          <div class="evento-fecha" id="reg-fecha">Martes 20 de octubre de 2026</div>
+          <p id="reg-mensaje" class="muted">Bienvenido. Regístrate con tu DNI para confirmar tu asistencia y tu almuerzo.</p>
+          <div id="reg-kiosco-badge" class="badge oculto">MODO KIOSCO · registro asistido</div>
+        </div>
+
+        <div id="reg-cerrado" class="card aviso-rojo oculto">El registro está cerrado. Si ya te registraste, usa «Recuperar mi ticket».</div>
+        <div id="reg-tardio" class="card aviso-amarillo oculto">El registro de almuerzos ya se cerró. Puedes registrar tu asistencia; para cualquier consulta, acércate al personal del EGCM.</div>
+
+        <form id="form-registro" class="card" novalidate>
+          <div class="campo">
+            <label>Soy</label>
+            <div class="segmento">
+              <button type="button" class="seg activo" data-tipo="TRABAJADOR">Trabajador SEDAPAL</button>
+              <button type="button" class="seg" data-tipo="INVITADO">Invitado</button>
+            </div>
+          </div>
+          <div class="campo" id="campo-ficha">
+            <label for="f-ficha">Ficha <span class="muted">(completa tu nombre desde el padrón)</span></label>
+            <input id="f-ficha" inputmode="numeric" maxlength="6" placeholder="Ej. 24881" autocomplete="off">
+          </div>
+          <div class="campo">
+            <label for="f-dni">DNI <span class="muted">(8 dígitos · CE 9 dígitos)</span></label>
+            <input id="f-dni" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Ej. 71234567">
+            <div class="error-campo" id="e-dni"></div>
+            <div id="aviso-registrado" class="aviso-amarillo oculto">Este DNI ya está registrado. <button type="button" class="link" id="btn-ver-existente">Ver el ticket</button></div>
+          </div>
+          <div class="campo">
+            <label for="f-nombres">Nombres y apellidos</label>
+            <input id="f-nombres" autocomplete="name" maxlength="80" placeholder="Ej. MARÍA PÉREZ QUISPE">
+            <div class="error-campo" id="e-nombres"></div>
+          </div>
+          <div class="campo">
+            <label for="f-area" id="lbl-area">Área <span class="muted">(opcional)</span></label>
+            <input id="f-area" maxlength="60" placeholder="Ej. Equipo Gestión Comercial y Micromedición">
+          </div>
+          <label class="check" id="check-almuerzo"><input type="checkbox" id="f-almuerzo" checked> <span>Deseo recibir almuerzo</span></label>
+          <button type="submit" id="btn-registrar" class="btn btn-primary btn-block">Registrarme</button>
+          <div id="reg-error" class="error-global oculto"></div>
+        </form>
+
+        <div class="card centro" id="card-recuperar">
+          <p class="muted" style="margin-bottom:10px">¿Ya te registraste en otro celular?</p>
+          <button type="button" class="btn btn-ghost" id="btn-recuperar">Recuperar mi ticket</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== TICKET (RF-04, RF-05, RF-15) ===================== -->
+    <section id="view-ticket" class="view oculto">
+      <div class="container">
+        <div class="ticket">
+          <div class="ticket-banda" id="tk-banda">
+            <div class="ticket-evento" id="tk-evento">Señor de los Milagros 2026</div>
+            <div class="ticket-sub" id="tk-sub">Ticket de almuerzo · EGCM</div>
+          </div>
+          <div id="tk-aviso" class="aviso-amarillo oculto"></div>
+          <div class="qr-wrap"><div id="qr"></div></div>
+          <div class="ticket-id" id="tk-id">—</div>
+          <div class="ticket-nombre" id="tk-nombres">—</div>
+          <div class="ticket-datos" id="tk-datos">—</div>
+          <div class="chips">
+            <span class="chip" id="chip-solicitado">Almuerzo: no solicitado</span>
+            <span class="chip" id="chip-entregado">Entrega: pendiente</span>
+          </div>
+          <button type="button" class="btn btn-primary btn-block" id="btn-solicitar">Solicitar almuerzo</button>
+          <p class="muted centro small" id="tk-ayuda" style="margin-top:12px">Muestra este QR al recoger tu almuerzo. Toma una captura de pantalla por si te quedas sin señal.</p>
+          <div class="acciones">
+            <button type="button" class="btn btn-ghost" id="btn-actualizar">Actualizar estado</button>
+            <button type="button" class="btn btn-ghost" id="btn-otra-persona">Registrar a otra persona</button>
+            <button type="button" class="btn btn-sedapal btn-block oculto" id="btn-nuevo-registro">Nuevo registro</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== VALIDADOR (RF-06, RF-07, RF-15) ===================== -->
+    <section id="view-validador" class="view oculto">
+      <div class="container">
+        <div class="card" id="val-login">
+          <h2>Entrega de almuerzos</h2>
+          <p class="muted" style="margin-bottom:14px">Acceso para el staff del EGCM.</p>
+          <div class="campo"><label for="val-pin">PIN</label><input id="val-pin" type="password" inputmode="numeric" maxlength="12" autocomplete="off"></div>
+          <div class="campo"><label for="val-actor">Tu nombre</label><input id="val-actor" maxlength="40" placeholder="Ej. ROSA"></div>
+          <button type="button" class="btn btn-sedapal btn-block" id="btn-val-ingresar">Ingresar</button>
+          <div class="error-global oculto" id="val-login-error"></div>
+        </div>
+
+        <div id="val-ops" class="oculto">
+          <div class="barra-staff"><span>Validador: <b id="val-actor-nombre"></b></span><button type="button" class="link" id="btn-val-salir">Salir</button></div>
+          <div id="val-result" class="card resultado oculto"></div>
+          <div class="tabs">
+            <button type="button" class="tab activo" data-tab="escanear">Escanear</button>
+            <button type="button" class="tab" data-tab="buscar">Buscar</button>
+          </div>
+          <div id="tab-escanear">
+            <div class="card">
+              <div id="reader"></div>
+              <div class="acciones">
+                <button type="button" class="btn btn-sedapal btn-block" id="btn-camara">Iniciar cámara</button>
+              </div>
+              <p class="muted small centro" style="margin-top:10px">Si la cámara no abre, abre esta página en Chrome o Safari (no dentro de WhatsApp) y acepta el permiso de cámara.</p>
+            </div>
+          </div>
+          <div id="tab-buscar" class="oculto">
+            <div class="card">
+              <div class="campo"><label for="val-q">DNI o nombre</label><input id="val-q" placeholder="Escribe al menos 3 caracteres" autocomplete="off"></div>
+              <div id="val-resultados" class="lista"><p class="muted small">Escribe para buscar.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PANEL (RF-08, RF-09, RF-10, RF-12, RF-15) ===================== -->
+    <section id="view-panel" class="view oculto">
+      <div class="container">
+        <div class="card" id="pan-login">
+          <h2>Panel del organizador</h2>
+          <p class="muted" style="margin-bottom:14px">Contadores en vivo, control del corte de almuerzo, listado y exportación.</p>
+          <div class="campo"><label for="pan-pin">PIN</label><input id="pan-pin" type="password" inputmode="numeric" maxlength="12" autocomplete="off"></div>
+          <div class="campo"><label for="pan-actor">Tu nombre</label><input id="pan-actor" maxlength="40" placeholder="Ej. CARLOS"></div>
+          <button type="button" class="btn btn-sedapal btn-block" id="btn-pan-ingresar">Ingresar</button>
+          <div class="error-global oculto" id="pan-login-error"></div>
+        </div>
+
+        <div id="pan-ops" class="oculto">
+          <div class="barra-staff"><span>Actualizado: <b id="pan-hora">—</b></span><button type="button" class="link" id="btn-pan-salir">Salir</button></div>
+          <div class="kpis">
+            <div class="kpi"><div class="kpi-n" id="k-total">0</div><div class="kpi-l">Registrados</div></div>
+            <div class="kpi kpi-evento"><div class="kpi-n" id="k-derecho">0</div><div class="kpi-l">Con almuerzo</div></div>
+            <div class="kpi kpi-no"><div class="kpi-n" id="k-tardios">0</div><div class="kpi-l">Después del cierre</div></div>
+            <div class="kpi"><div class="kpi-n" id="k-sol">0</div><div class="kpi-l">Solicitaron</div></div>
+            <div class="kpi kpi-ok"><div class="kpi-n" id="k-ent">0</div><div class="kpi-l">Entregados</div></div>
+            <div class="kpi kpi-pend"><div class="kpi-n" id="k-pend">0</div><div class="kpi-l">Pendientes</div></div>
+          </div>
+
+          <div class="card">
+            <div class="estado-linea"><span>Registro de almuerzos</span><b id="est-almuerzo" class="abierto">ABIERTO</b></div>
+            <div class="estado-linea"><span>Registro de asistentes</span><b id="est-registro" class="abierto">ABIERTO</b></div>
+            <div class="acciones fila">
+              <button type="button" class="btn btn-danger btn-sm" id="btn-cerrar-almuerzo">Cerrar almuerzos</button>
+              <button type="button" class="btn btn-ghost btn-sm oculto" id="btn-reabrir-almuerzo">Reabrir almuerzos</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-toggle-registro">Cerrar registro</button>
+            </div>
+            <p class="muted small" style="margin-top:10px">Lo normal es retirar el QR del afiche cuando empiece el programa. Estos botones son el respaldo: «Cerrar almuerzos» deja los nuevos registros solo como asistencia; «Cerrar registro» no admite más registros. Los ya registrados no cambian.</p>
+          </div>
+
+          <div class="acciones fila" style="margin-bottom:14px">
+            <button type="button" class="btn btn-sedapal btn-sm" id="btn-pan-refrescar">Actualizar</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-pan-excel">Exportar Excel</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-pan-qr">QR del evento</button>
+            <a class="btn btn-ghost btn-sm oculto" id="lnk-sheet" target="_blank" rel="noopener">Abrir hoja</a>
+          </div>
+          <div class="card">
+            <div class="campo"><input id="pan-q" placeholder="Buscar por DNI o nombre" autocomplete="off"></div>
+            <div class="tabla-wrap">
+              <table class="tabla">
+                <thead><tr><th>Nombres</th><th>DNI</th><th>Tipo</th><th>Almuerzo</th><th>Solicitó</th><th>Entregado</th><th>Registro</th></tr></thead>
+                <tbody id="pan-tbody"></tbody>
+              </table>
+            </div>
+            <div class="muted small" id="pan-conteo" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div>ETIC · SEDAPAL</div>
+    <div class="foot-links"><a href="#validador">Staff</a> · <a href="#" id="lnk-acerca">Acerca de</a></div>
+    <img data-logo="kolh" alt="" class="logo-kolh">
+  </footer>
+
+  <div id="toast"></div>
+
+  <!-- Acerca de (RF-14) -->
+  <div id="modal-acerca" class="modal oculto">
+    <div class="modal-caja">
+      <h3>Registro QR · Señor de los Milagros 2026</h3>
+      <p class="muted small">Versión <span id="acerca-version">1.1.0</span></p>
+      <p style="margin-top:10px">Herramienta interna para el registro de asistentes y la entrega de almuerzos del Equipo Gestión Comercial y Micromedición (EGCM).</p>
+      <div class="logos">
+        <img data-logo="sedapal" alt="SEDAPAL">
+        <img data-logo="kolh" alt="">
+      </div>
+      <p><b>ETIC – SEDAPAL</b></p>
+      <button type="button" class="btn btn-ghost btn-block" id="btn-cerrar-acerca" style="margin-top:14px">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- QR del evento (RF-10) -->
+  <div id="modal-qr-evento" class="modal oculto">
+    <div class="modal-caja">
+      <h3 id="qr-evento-titulo">Señor de los Milagros 2026</h3>
+      <p>Escanea para registrar tu asistencia y tu almuerzo</p>
+      <div id="qr-evento"></div>
+      <p class="url-evento" id="qr-evento-url"></p>
+      <div class="acciones">
+        <button type="button" class="btn btn-sedapal" id="btn-imprimir-qr">Imprimir</button>
+        <button type="button" class="btn btn-ghost" id="btn-cerrar-qr">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================================================
+    // CONFIG (lo único que se edita a mano)
+    // ========================================================================
+    const APP = {
+      version: '1.1.0',
+      // URL del Web App de Apps Script (Implementar → Aplicación web → URL que termina en /exec)
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbxG_NdSiRvWYwyhzlhzsWml-rrfAausZrFjfy8zt-w1dnftx4mN9TXc0QNzQ8ElYlBEcw/exec',
+      // Opcional: enlace a la hoja de cálculo para el botón «Abrir hoja» del panel
+      SHEET_URL: '',
+      refrescoPanelMs: 15000,
+      cacheListaMs: 20000,
+      cacheConfigMs: 30000,
+      storageKey: 'smilagros26.ticket',
+      sessionKey: 'smilagros26.staff'
+    };
+
+    // Logos embebidos (RF-14): se asignan de inmediato, antes del primer pintado completo
+    document.querySelectorAll('img[data-logo]').forEach((i) => { i.src = LOGOS[i.dataset.logo]; });
+    document.getElementById('favicon').href = LOGOS.sedapal;
+
+    // ========================================================================
+    // Api — fetch a Apps Script con reintentos (RNF-06)
+    // ========================================================================
+    const Api = (() => {
+      const esperas = [800, 1600, 3200];
+      const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+      async function conReintentos(fn) {
+        for (let i = 0; ; i++) {
+          try { return await fn(); }
+          catch (e) { if (i >= esperas.length) throw new Error('SIN_CONEXION'); await dormir(esperas[i]); }
+        }
+      }
+      async function leerJson(r) {
+        if (!r.ok) throw new Error('HTTP_' + r.status);
+        const txt = await r.text();
+        try { return JSON.parse(txt); } catch (e) { throw new Error('RESPUESTA_INVALIDA'); }
+      }
+      function get(params) {
+        return conReintentos(async () => {
+          const url = APP.GAS_URL + '?' + new URLSearchParams(params).toString();
+          return leerJson(await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' }));
+        });
+      }
+      function post(body) {
+        // Content-Type text/plain (por defecto en fetch con string) evita el preflight CORS que Apps Script no responde
+        return conReintentos(async () => leerJson(await fetch(APP.GAS_URL, { method: 'POST', redirect: 'follow', body: JSON.stringify(body) })));
+      }
+      return { get, post };
+    })();
+
+    // ========================================================================
+    // Storage — ticket del asistente (localStorage) y sesión del staff (sessionStorage)
+    // ========================================================================
+    const Storage = {
+      guardarTicket(t) { try { localStorage.setItem(APP.storageKey, JSON.stringify(t)); } catch (e) {} },
+      leerTicket() { try { return JSON.parse(localStorage.getItem(APP.storageKey) || 'null'); } catch (e) { return null; } },
+      borrarTicket() { try { localStorage.removeItem(APP.storageKey); } catch (e) {} },
+      guardarStaff(s) { try { sessionStorage.setItem(APP.sessionKey, JSON.stringify(s)); } catch (e) {} },
+      leerStaff() { try { return JSON.parse(sessionStorage.getItem(APP.sessionKey) || 'null'); } catch (e) { return null; } },
+      borrarStaff() { try { sessionStorage.removeItem(APP.sessionKey); } catch (e) {} }
+    };
+
+    // ========================================================================
+    // UI — utilidades de interfaz
+    // ========================================================================
+    const $ = (id) => document.getElementById(id);
+    const UI = {
+      toast(msg, tipo) {
+        const t = $('toast'); t.textContent = msg; t.className = 'visible ' + (tipo || '');
+        clearTimeout(UI._t); UI._t = setTimeout(() => { t.className = ''; }, 3200);
+      },
+      ocupado(btn, estado, texto) {
+        if (!btn) return;
+        if (estado) { btn.dataset.txt = btn.textContent; btn.textContent = texto || 'Procesando…'; btn.disabled = true; }
+        else { btn.textContent = btn.dataset.txt || btn.textContent; btn.disabled = false; }
+      },
+      mostrar(el, visible) { (typeof el === 'string' ? $(el) : el).classList.toggle('oculto', !visible); },
+      hora(fecha) { const m = /(\d{2}):(\d{2})(?::\d{2})?$/.exec(fecha || ''); return m ? m[1] + ':' + m[2] : (fecha || ''); },
+      sinAcentos(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); },
+      esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); },
+      mensajeError(e) {
+        const cod = (e && e.message) || '';
+        if (cod === 'SIN_CONEXION' || cod.startsWith('HTTP_')) return 'Sin conexión con el servidor. Revisa tu señal e inténtalo de nuevo.';
+        if (cod === 'RESPUESTA_INVALIDA') return 'El servidor respondió algo inesperado. Avisa al staff.';
+        return 'Ocurrió un error: ' + cod;
+      },
+      errorApi(res) {
+        const m = { REGISTRO_CERRADO: 'El registro está cerrado.', SOLICITUD_CERRADA: 'La solicitud de almuerzos está cerrada.',
+          SIN_DERECHO: 'El registro de almuerzos ya se cerró.', DATOS_INVALIDOS: res.mensaje || 'Datos inválidos.',
+          NO_ENCONTRADO: 'No se encontró el registro.', PIN_INVALIDO: 'PIN incorrecto.', YA_ENTREGADO: 'Este almuerzo ya fue entregado.',
+          OCUPADO: 'Servidor ocupado, inténtalo de nuevo.', CLAVE_NO_EDITABLE: 'Esa opción no se cambia desde el panel.' };
+        return m[res.error] || res.mensaje || ('Error: ' + res.error);
+      }
+    };
+
+    // ========================================================================
+    // Config del evento (RF-12, RF-15) — leída del servidor, con valores por defecto
+    // ========================================================================
+    const Config = (() => {
+      let cache = null, hora = 0;
+      const porDefecto = { evento: 'Señor de los Milagros 2026', fecha: 'Martes 20 de octubre de 2026', lugar: '',
+        mensaje: 'Bienvenido. Regístrate con tu DNI para confirmar tu asistencia y tu almuerzo.',
+        registroAbierto: true, solicitudAbierta: true, almuerzoVigente: true, corteAlmuerzo: '' };
+      async function cargar(forzar) {
+        if (cache && !forzar && Date.now() - hora < APP.cacheConfigMs) return cache;
+        try {
+          const r = await Api.get({ action: 'config' });
+          if (r.ok) establecer(r.config);
+        } catch (e) { /* sin red: se mantienen los valores por defecto */ }
+        return cache || porDefecto;
+      }
+      function establecer(c) { cache = Object.assign({}, porDefecto, c); hora = Date.now(); aplicar(cache); return cache; }
+      function aplicar(c) {
+        $('hdr-titulo').textContent = c.evento;
+        $('reg-evento').textContent = c.evento;
+        $('tk-evento').textContent = c.evento;
+        $('qr-evento-titulo').textContent = c.evento;
+        $('reg-fecha').textContent = [c.fecha, c.lugar].filter(Boolean).join(' · ');
+        $('reg-mensaje').textContent = c.mensaje || '';
+        UI.mostrar('reg-cerrado', !c.registroAbierto);
+        UI.mostrar('form-registro', c.registroAbierto);
+        UI.mostrar('reg-tardio', c.registroAbierto && !c.almuerzoVigente);
+        const chk = $('f-almuerzo');
+        chk.disabled = !c.almuerzoVigente; if (!c.almuerzoVigente) chk.checked = false;
+        UI.mostrar('check-almuerzo', c.almuerzoVigente);
+      }
+      return { cargar, establecer, actual: () => cache || porDefecto };
+    })();
+
+    // ========================================================================
+    // Staff — PIN compartido verificado en servidor (ADR-0004)
+    // ========================================================================
+    const Staff = {
+      sesion() { return Storage.leerStaff(); },
+      async ingresar(pin, actor) {
+        pin = String(pin || '').trim(); actor = String(actor || '').trim().toUpperCase();
+        if (!pin) throw new Error('Escribe el PIN');
+        if (actor.length < 2) throw new Error('Escribe tu nombre');
+        const r = await Api.get({ action: 'pin', pin, actor });
+        if (!r.ok) throw new Error(UI.errorApi(r));
+        const s = { pin, actor }; Storage.guardarStaff(s); return s;
+      },
+      salir() { Storage.borrarStaff(); }
+    };
+
+    // Lista de asistentes compartida por validador y panel (caché corta)
+    const Datos = (() => {
+      let filas = null, hora = 0;
+      async function lista(forzar) {
+        const s = Staff.sesion(); if (!s) throw new Error('SIN_SESION');
+        if (filas && !forzar && Date.now() - hora < APP.cacheListaMs) return filas;
+        const r = await Api.get({ action: 'lista', pin: s.pin });
+        if (!r.ok) throw new Error(UI.errorApi(r));
+        filas = r.filas || []; hora = Date.now(); return filas;
+      }
+      function actualizar(t) { if (!filas) return; const i = filas.findIndex((f) => f.id === t.id); if (i >= 0) filas[i] = t; }
+      return { lista, actualizar, invalidar: () => { filas = null; } };
+    })();
+
+    // ========================================================================
+    // Registro (RF-01, RF-02, RF-03, RF-11)
+    // ========================================================================
+    const Registro = (() => {
+      const estado = { kiosco: false, tipo: 'TRABAJADOR', dniRegistrado: '' };
+
+      async function mostrar(esKiosco) {
+        estado.kiosco = !!esKiosco;
+        UI.mostrar('reg-kiosco-badge', estado.kiosco);
+        UI.mostrar('card-recuperar', !estado.kiosco);
+        if (estado.kiosco) limpiar();
+        Config.cargar(true);
+      }
+
+      function limpiar() {
+        ['f-dni', 'f-nombres', 'f-ficha', 'f-area'].forEach((id) => { $(id).value = ''; $(id).classList.remove('invalido'); });
+        $('e-dni').textContent = ''; $('e-nombres').textContent = '';
+        $('f-almuerzo').checked = Config.actual().almuerzoVigente;
+        UI.mostrar('aviso-registrado', false); UI.mostrar('reg-error', false);
+        setTipo('TRABAJADOR');
+        estado.dniRegistrado = '';
+      }
+
+      function setTipo(tipo) {
+        estado.tipo = tipo;
+        document.querySelectorAll('.segmento .seg').forEach((b) => b.classList.toggle('activo', b.dataset.tipo === tipo));
+        UI.mostrar('campo-ficha', tipo === 'TRABAJADOR');
+        $('lbl-area').innerHTML = (tipo === 'TRABAJADOR' ? 'Área' : 'Empresa o institución') + ' <span class="muted">(opcional)</span>';
+      }
+
+      function dniNormalizado() { return $('f-dni').value.replace(/[\s.\-]/g, '').toUpperCase(); }
+
+      async function autocompletar() {
+        const dni = dniNormalizado();
+        UI.mostrar('aviso-registrado', false); estado.dniRegistrado = '';
+        if (!/^[A-Z0-9]{8,12}$/.test(dni)) return;
+        try {
+          const r = await Api.get({ action: 'buscar', dni });
+          if (!r.ok) return;
+          if (r.registrado) { estado.dniRegistrado = dni; UI.mostrar('aviso-registrado', true); }
+          if (r.padron) {
+            if (!$('f-nombres').value.trim()) $('f-nombres').value = r.padron.nombres || '';
+            if (r.padron.ficha) { setTipo('TRABAJADOR'); $('f-ficha').value = r.padron.ficha; }
+            if (!$('f-area').value.trim() && r.padron.area) $('f-area').value = r.padron.area;
+          }
+        } catch (e) { /* sin red: el usuario escribe a mano */ }
+      }
+
+      // RF-02: el padrón ZHRPOS tiene ficha, nombres y área (sin DNI) → la ficha autocompleta
+      async function buscarPorFicha() {
+        const ficha = $('f-ficha').value.replace(/\D/g, '');
+        if (ficha.length < 4) return;
+        try {
+          const r = await Api.get({ action: 'buscar', ficha });
+          if (r.ok && r.padron) {
+            $('f-nombres').value = r.padron.nombres || $('f-nombres').value;
+            if (!$('f-dni').value.trim() && r.padron.dni) $('f-dni').value = r.padron.dni;
+            if (r.padron.area) $('f-area').value = r.padron.area;
+          }
+        } catch (e) {}
+      }
+
+      function validar() {
+        let ok = true;
+        const dni = dniNormalizado(), nombres = $('f-nombres').value.trim();
+        $('e-dni').textContent = ''; $('e-nombres').textContent = '';
+        $('f-dni').classList.remove('invalido'); $('f-nombres').classList.remove('invalido');
+        if (!/^[A-Z0-9]{8,12}$/.test(dni)) { $('e-dni').textContent = 'Escribe tu DNI de 8 dígitos (CE: 9).'; $('f-dni').classList.add('invalido'); ok = false; }
+        if (nombres.length < 5) { $('e-nombres').textContent = 'Escribe tus nombres y apellidos completos.'; $('f-nombres').classList.add('invalido'); ok = false; }
+        return ok;
+      }
+
+      async function enviar(ev) {
+        ev.preventDefault();
+        UI.mostrar('reg-error', false);
+        if (!validar()) return;
+        const btn = $('btn-registrar');
+        UI.ocupado(btn, true, 'Registrando…');
+        try {
+          const r = await Api.post({
+            action: 'registrar', dni: dniNormalizado(), nombres: $('f-nombres').value.trim(), tipo: estado.tipo,
+            ficha: estado.tipo === 'TRABAJADOR' ? $('f-ficha').value.trim() : '', area: $('f-area').value.trim(),
+            almuerzo: $('f-almuerzo').checked ? 'SI' : 'NO', origen: estado.kiosco ? 'KIOSCO' : 'CELULAR'
+          });
+          if (!r.ok) { $('reg-error').textContent = UI.errorApi(r); UI.mostrar('reg-error', true); return; }
+          let aviso = '';
+          if (r.duplicado) aviso = 'Ya estabas registrado: este es tu ticket original.';
+          else if (r.ticket.derecho === 'NO') aviso = 'Tu asistencia quedó registrada. El registro de almuerzos ya se había cerrado.';
+          Ticket.establecer(r.ticket, { kiosco: estado.kiosco, aviso });
+          if (!estado.kiosco) Storage.guardarTicket(r.ticket);
+          Router.ir('ticket');
+        } catch (e) {
+          $('reg-error').textContent = UI.mensajeError(e); UI.mostrar('reg-error', true);
+        } finally { UI.ocupado(btn, false); }
+      }
+
+      async function verExistente() {
+        const dni = estado.dniRegistrado || dniNormalizado();
+        if (!dni) return;
+        await recuperarPorDni(dni, $('btn-ver-existente'));
+      }
+
+      async function recuperar() {
+        const dni = prompt('Escribe tu DNI para recuperar tu ticket:');
+        if (dni === null) return;
+        await recuperarPorDni(dni.replace(/[\s.\-]/g, '').toUpperCase(), $('btn-recuperar'));
+      }
+
+      async function recuperarPorDni(dni, btn) {
+        if (!/^[A-Z0-9]{8,12}$/.test(dni)) { UI.toast('DNI inválido', 'error'); return; }
+        UI.ocupado(btn, true, 'Buscando…');
+        try {
+          const r = await Api.get({ action: 'ticket', dni });
+          if (!r.ok) { UI.toast(UI.errorApi(r), 'error'); return; }
+          Ticket.establecer(r.ticket, { kiosco: estado.kiosco });
+          if (!estado.kiosco) Storage.guardarTicket(r.ticket);
+          Router.ir('ticket');
+        } catch (e) { UI.toast(UI.mensajeError(e), 'error'); }
+        finally { UI.ocupado(btn, false); }
+      }
+
+      function enlazar() {
+        $('form-registro').addEventListener('submit', enviar);
+        $('f-dni').addEventListener('blur', autocompletar);
+        $('f-dni').addEventListener('input', () => { if (dniNormalizado().length === 8) autocompletar(); });
+        $('f-ficha').addEventListener('blur', buscarPorFicha);
+        $('f-ficha').addEventListener('input', () => { if ($('f-ficha').value.replace(/\D/g, '').length === 5) buscarPorFicha(); });
+        document.querySelectorAll('.segmento .seg').forEach((b) => b.addEventListener('click', () => setTipo(b.dataset.tipo)));
+        $('btn-ver-existente').addEventListener('click', verExistente);
+        $('btn-recuperar').addEventListener('click', recuperar);
+      }
+
+      return { mostrar, enlazar, limpiar, esKiosco: () => estado.kiosco };
+    })();
+
+    // ========================================================================
+    // Ticket (RF-04, RF-05, RF-15)
+    // ========================================================================
+    const Ticket = (() => {
+      let actual = null, opciones = {};
+
+      function establecer(t, opts) { actual = t; opciones = opts || {}; }
+
+      async function mostrar() {
+        const t = actual || Storage.leerTicket();
+        if (!t) { Router.ir('registro'); return; }
+        actual = t;
+        render(t);
+        Config.cargar();
+        // Refresca el estado desde el servidor sin bloquear la pantalla
+        try {
+          const r = await Api.get({ action: 'ticket', id: t.id });
+          if (r.ok) { actual = r.ticket; if (!opciones.kiosco) Storage.guardarTicket(r.ticket); render(r.ticket); }
+        } catch (e) { /* sin red: se muestra lo guardado */ }
+      }
+
+      function render(t) {
+        const qr = $('qr'); qr.innerHTML = '';
+        if (window.QRCode) new QRCode(qr, { text: t.id, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+        else qr.textContent = t.id;
+        const tardio = t.derecho === 'NO';
+        $('tk-banda').classList.toggle('tardio', tardio);
+        $('tk-sub').textContent = tardio ? 'Constancia de asistencia · EGCM' : 'Ticket de almuerzo · EGCM';
+        $('tk-id').textContent = t.id;
+        $('tk-nombres').textContent = t.nombres;
+        $('tk-datos').textContent = 'DNI ' + t.dni + ' · ' + (t.tipo === 'TRABAJADOR' ? 'Trabajador SEDAPAL' + (t.ficha ? ' · Ficha ' + t.ficha : '') : 'Invitado') + (t.area ? ' · ' + t.area : '') + ' · Registro ' + UI.hora(t.fechaRegistro);
+        const cs = $('chip-solicitado'), ce = $('chip-entregado');
+        if (tardio) {
+          cs.textContent = 'Asistencia registrada · ' + UI.hora(t.fechaRegistro); cs.className = 'chip';
+          ce.textContent = ''; ce.className = 'chip oculto';
+        } else {
+          cs.textContent = t.solicitado === 'SI' ? 'Almuerzo solicitado ✓' : 'Almuerzo: no solicitado';
+          cs.className = 'chip ' + (t.solicitado === 'SI' ? 'ok' : 'pend');
+          ce.textContent = t.entregado === 'SI' ? 'Entregado ' + UI.hora(t.fechaEntrega) + ' ✓' : 'Entrega: pendiente';
+          ce.className = 'chip ' + (t.entregado === 'SI' ? 'ok' : '');
+        }
+        UI.mostrar('btn-solicitar', !tardio && t.solicitado !== 'SI' && t.entregado !== 'SI');
+        UI.mostrar('tk-aviso', !!opciones.aviso); $('tk-aviso').textContent = opciones.aviso || '';
+        const kiosco = !!opciones.kiosco;
+        UI.mostrar('btn-nuevo-registro', kiosco);
+        UI.mostrar('btn-actualizar', !kiosco);
+        UI.mostrar('btn-otra-persona', !kiosco);
+        UI.mostrar('tk-ayuda', !kiosco && !tardio);
+        UI.mostrar('lnk-ticket', !kiosco);
+      }
+
+      async function solicitar() {
+        if (!actual) return;
+        const btn = $('btn-solicitar'); UI.ocupado(btn, true, 'Solicitando…');
+        try {
+          const r = await Api.post({ action: 'solicitar', id: actual.id });
+          if (!r.ok) { UI.toast(UI.errorApi(r), 'error'); if (r.ticket) { actual = r.ticket; render(r.ticket); } return; }
+          actual = r.ticket; if (!opciones.kiosco) Storage.guardarTicket(r.ticket); render(r.ticket);
+          UI.toast('Almuerzo solicitado', 'ok');
+        } catch (e) { UI.toast(UI.mensajeError(e), 'error'); }
+        finally { UI.ocupado(btn, false); }
+      }
+
+      async function actualizar() {
+        if (!actual) return;
+        const btn = $('btn-actualizar'); UI.ocupado(btn, true, 'Actualizando…');
+        try {
+          const r = await Api.get({ action: 'ticket', id: actual.id });
+          if (!r.ok) { UI.toast(UI.errorApi(r), 'error'); return; }
+          actual = r.ticket; Storage.guardarTicket(r.ticket); opciones.aviso = ''; render(r.ticket);
+          UI.toast('Estado actualizado', 'ok');
+        } catch (e) { UI.toast(UI.mensajeError(e), 'error'); }
+        finally { UI.ocupado(btn, false); }
+      }
+
+      function otraPersona() {
+        if (!confirm('Se quitará este ticket de este celular (podrás recuperarlo con tu DNI). ¿Continuar?')) return;
+        Storage.borrarTicket(); actual = null; opciones = {}; UI.mostrar('lnk-ticket', false);
+        Registro.limpiar(); Router.ir('registro');
+      }
+
+      function nuevoRegistro() { actual = null; opciones = {}; Registro.limpiar(); Router.ir('kiosco'); }
+
+      function enlazar() {
+        $('btn-solicitar').addEventListener('click', solicitar);
+        $('btn-actualizar').addEventListener('click', actualizar);
+        $('btn-otra-persona').addEventListener('click', otraPersona);
+        $('btn-nuevo-registro').addEventListener('click', nuevoRegistro);
+      }
+
+      return { establecer, mostrar, enlazar };
+    })();
+
+    // ========================================================================
+    // Validador (RF-06, RF-07, RF-13, RF-15)
+    // ========================================================================
+    const Validador = (() => {
+      let scanner = null, camaraActiva = false, enCurso = false, timerBusqueda = null;
+
+      function mostrar() {
+        const s = Staff.sesion();
+        UI.mostrar('val-login', !s); UI.mostrar('val-ops', !!s);
+        if (s) { $('val-actor-nombre').textContent = s.actor; limpiarResultado(); }
+      }
+
+      async function ingresar() {
+        const btn = $('btn-val-ingresar'); UI.mostrar('val-login-error', false); UI.ocupado(btn, true, 'Verificando…');
+        try {
+          await Staff.ingresar($('val-pin').value, $('val-actor').value);
+          $('val-pin').value = ''; mostrar();
+        } catch (e) {
+          $('val-login-error').textContent = e.message === 'SIN_CONEXION' ? UI.mensajeError(e) : e.message; UI.mostrar('val-login-error', true);
+        } finally { UI.ocupado(btn, false); }
+      }
+
+      function salir() { detenerCamara(); Staff.salir(); mostrar(); }
+
+      function tab(nombre) {
+        document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('activo', b.dataset.tab === nombre));
+        UI.mostrar('tab-escanear', nombre === 'escanear'); UI.mostrar('tab-buscar', nombre === 'buscar');
+        if (nombre === 'buscar') { detenerCamara(); $('val-q').focus(); }
+      }
+
+      async function iniciarCamara() {
+        if (!window.Html5Qrcode) { UI.toast('No cargó el lector de QR. Revisa la conexión y recarga.', 'error'); return; }
+        if (camaraActiva) { await detenerCamara(); return; }
+        const btn = $('btn-camara'); UI.ocupado(btn, true, 'Abriendo cámara…');
+        try {
+          scanner = scanner || new Html5Qrcode('reader');
+          await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 230, height: 230 }, aspectRatio: 1.0 }, alLeer, () => {});
+          camaraActiva = true; UI.ocupado(btn, false); btn.textContent = 'Detener cámara';
+        } catch (e) {
+          UI.ocupado(btn, false);
+          UI.toast('No se pudo abrir la cámara. Revisa el permiso o usa «Buscar».', 'error');
+        }
+      }
+
+      async function detenerCamara() {
+        if (scanner && camaraActiva) { try { await scanner.stop(); } catch (e) {} }
+        camaraActiva = false;
+        const btn = $('btn-camara'); if (btn) { btn.textContent = 'Iniciar cámara'; btn.disabled = false; }
+      }
+
+      function extraerId(texto) {
+        const m = /SM26-[A-Z2-9]{6}/i.exec(String(texto || ''));
+        if (m) return m[0].toUpperCase();
+        try { const u = new URL(texto); return (u.searchParams.get('id') || '').toUpperCase(); } catch (e) { return String(texto || '').trim().toUpperCase(); }
+      }
+
+      async function alLeer(texto) {
+        if (enCurso) return;
+        enCurso = true;
+        if (navigator.vibrate) navigator.vibrate(80);
+        await consultar(extraerId(texto));
+      }
+
+      async function consultar(id) {
+        const caja = $('val-result');
+        caja.className = 'card resultado'; caja.innerHTML = '<div class="r-estado">Consultando…</div><div class="r-nombre">' + UI.esc(id) + '</div>';
+        try {
+          const r = await Api.get({ action: 'ticket', id });
+          if (!r.ok) { renderResultado(null, 'no', id); registrarRechazo(id, '', 'NO_ENCONTRADO'); return; }
+          const t = r.ticket;
+          if (t.derecho === 'NO') { renderResultado(t, 'sinderecho'); registrarRechazo(t.id, t.dni, 'SIN_DERECHO registrado después del cierre ' + t.fechaRegistro); return; }
+          if (t.entregado === 'SI') { renderResultado(t, 'ya'); registrarRechazo(t.id, t.dni, 'YA_ENTREGADO ' + t.fechaEntrega + ' por ' + t.entregadoPor); return; }
+          renderResultado(t, 'pendiente');
+        } catch (e) { renderResultado(null, 'error', UI.mensajeError(e)); }
+      }
+
+      function renderResultado(t, estado, extra) {
+        const caja = $('val-result');
+        const clase = { pendiente: '', ok: 'ok', ya: 'ya', sinderecho: 'ya', no: 'no', error: 'no' }[estado] || '';
+        caja.className = 'card resultado ' + clase;
+        const btnSiguiente = (txt) => '<div class="acciones"><button type="button" class="btn btn-ghost btn-sm" id="btn-siguiente">' + (txt || 'Siguiente') + '</button></div>';
+        let html = '';
+        if (estado === 'pendiente') {
+          html = '<div class="r-estado">Pendiente de entrega</div>' + datos(t) +
+            '<div class="acciones"><button type="button" class="btn btn-ok btn-block" id="btn-entregar">ENTREGAR ALMUERZO</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" id="btn-siguiente">Cancelar</button></div>';
+        } else if (estado === 'ok') {
+          html = '<div class="r-estado">✓ Entregado</div>' + datos(t) + btnSiguiente();
+        } else if (estado === 'ya') {
+          html = '<div class="r-estado">✗ Ya entregado · ' + UI.esc(UI.hora(t.fechaEntrega)) + ' · ' + UI.esc(t.entregadoPor) + '</div>' + datos(t) + btnSiguiente();
+        } else if (estado === 'sinderecho') {
+          html = '<div class="r-estado">✗ Registrado después del cierre · ' + UI.esc(UI.hora(t.fechaRegistro)) + '</div>' + datos(t) + '<div class="r-datos" style="margin-top:6px">Sin almuerzo asignado. Si hay duda, consultar con el organizador.</div>' + btnSiguiente();
+        } else if (estado === 'no') {
+          html = '<div class="r-estado">Ticket no encontrado</div><div class="r-nombre">' + UI.esc(extra) + '</div><div class="r-datos">Pide el DNI y usa «Buscar».</div>' + btnSiguiente();
+        } else {
+          html = '<div class="r-estado">Error</div><div class="r-datos">' + UI.esc(extra) + '</div>' + btnSiguiente('Reintentar');
+        }
+        caja.innerHTML = html; UI.mostrar(caja, true);
+        if ($('btn-entregar')) $('btn-entregar').addEventListener('click', () => entregar(t.id));
+        if ($('btn-siguiente')) $('btn-siguiente').addEventListener('click', limpiarResultado);
+        if (estado === 'ok') setTimeout(() => { if (caja.classList.contains('ok')) limpiarResultado(); }, 2500);
+        caja.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function datos(t) {
+        return '<div class="r-nombre">' + UI.esc(t.nombres) + '</div><div class="r-datos">DNI ' + UI.esc(t.dni) + ' · ' +
+          (t.tipo === 'TRABAJADOR' ? 'Trabajador' + (t.ficha ? ' · Ficha ' + UI.esc(t.ficha) : '') : 'Invitado') + (t.area ? ' · ' + UI.esc(t.area) : '') +
+          ' · Registro ' + UI.esc(UI.hora(t.fechaRegistro)) + ' · Solicitó: ' + (t.solicitado === 'SI' ? 'sí' : 'no') + '</div>';
+      }
+
+      function limpiarResultado() { const caja = $('val-result'); caja.innerHTML = ''; UI.mostrar(caja, false); enCurso = false; }
+
+      async function entregar(id) {
+        const s = Staff.sesion(); if (!s) { mostrar(); return; }
+        const btn = $('btn-entregar'); UI.ocupado(btn, true, 'Registrando entrega…');
+        try {
+          const r = await Api.post({ action: 'entregar', id, pin: s.pin, actor: s.actor });
+          if (r.ok) { Datos.actualizar(r.ticket); renderResultado(r.ticket, 'ok'); UI.toast('Entrega registrada', 'ok'); refrescarBusqueda(); return; }
+          if (r.error === 'YA_ENTREGADO' && r.ticket) { Datos.actualizar(r.ticket); renderResultado(r.ticket, 'ya'); return; }
+          if (r.error === 'SIN_DERECHO' && r.ticket) { Datos.actualizar(r.ticket); renderResultado(r.ticket, 'sinderecho'); return; }
+          if (r.error === 'PIN_INVALIDO') { UI.toast('El PIN cambió. Vuelve a ingresar.', 'error'); salir(); return; }
+          renderResultado(null, 'error', UI.errorApi(r));
+        } catch (e) { renderResultado(null, 'error', UI.mensajeError(e)); }
+      }
+
+      function registrarRechazo(id, dni, motivo) {
+        const s = Staff.sesion(); if (!s) return;
+        Api.post({ action: 'rechazo', id, dni, pin: s.pin, actor: s.actor, motivo }).catch(() => {});
+      }
+
+      // ---- Búsqueda manual (RF-07) ----
+      function buscarInput() { clearTimeout(timerBusqueda); timerBusqueda = setTimeout(buscar, 250); }
+      async function buscar() {
+        const q = UI.sinAcentos($('val-q').value.trim()); const cont = $('val-resultados');
+        if (q.length < 3) { cont.innerHTML = '<p class="muted small">Escribe al menos 3 caracteres.</p>'; return; }
+        try {
+          const filtrar = (filas) => filas.filter((f) => String(f.dni).includes(q) || UI.sinAcentos(f.nombres).includes(q)).slice(0, 20);
+          let res = filtrar(await Datos.lista());
+          if (!res.length) res = filtrar(await Datos.lista(true)); // recién registrado (kiosco): refresca la lista una vez
+          if (!res.length) { cont.innerHTML = '<p class="muted small">Sin resultados. ¿Está registrado? Puede registrarse en el kiosco.</p>'; return; }
+          cont.innerHTML = res.map((f) => {
+            let estado, boton = '';
+            if (f.derecho === 'NO') estado = '<span class="tardio-txt">Después del cierre · ' + UI.esc(UI.hora(f.fechaRegistro)) + '</span>';
+            else if (f.entregado === 'SI') estado = '<span class="si">Entregado ' + UI.esc(UI.hora(f.fechaEntrega)) + '</span>';
+            else { estado = f.solicitado === 'SI' ? 'Solicitó' : 'No solicitó'; boton = '<button type="button" class="btn btn-ok btn-sm" data-id="' + UI.esc(f.id) + '">Entregar</button>'; }
+            return '<div class="item"><div><div class="i-nombre">' + UI.esc(f.nombres) + '</div><div class="i-datos">DNI ' + UI.esc(f.dni) + ' · ' +
+              (f.tipo === 'TRABAJADOR' ? 'Trabajador' : 'Invitado') + ' · ' + estado + '</div></div>' + boton + '</div>';
+          }).join('');
+          cont.querySelectorAll('button[data-id]').forEach((b) => b.addEventListener('click', () => { enCurso = true; consultar(b.dataset.id); }));
+        } catch (e) { cont.innerHTML = '<p class="error-campo">' + UI.esc(e.message === 'SIN_SESION' ? 'Vuelve a ingresar.' : UI.mensajeError(e)) + '</p>'; }
+      }
+      function refrescarBusqueda() { if (!$('tab-buscar').classList.contains('oculto')) buscar(); }
+
+      function enlazar() {
+        $('btn-val-ingresar').addEventListener('click', ingresar);
+        $('val-actor').addEventListener('keydown', (e) => { if (e.key === 'Enter') ingresar(); });
+        $('btn-val-salir').addEventListener('click', salir);
+        $('btn-camara').addEventListener('click', iniciarCamara);
+        document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => tab(b.dataset.tab)));
+        $('val-q').addEventListener('input', buscarInput);
+      }
+
+      return { mostrar, enlazar, detenerCamara };
+    })();
+
+    // ========================================================================
+    // Panel (RF-08, RF-09, RF-10, RF-12, RF-15)
+    // ========================================================================
+    const Panel = (() => {
+      let timer = null, filasActuales = [], config = null;
+
+      function mostrar() {
+        const s = Staff.sesion();
+        UI.mostrar('pan-login', !s); UI.mostrar('pan-ops', !!s);
+        if (APP.SHEET_URL) { $('lnk-sheet').href = APP.SHEET_URL; UI.mostrar('lnk-sheet', true); }
+        if (s) { refrescar(); iniciarAuto(); }
+      }
+
+      async function ingresar() {
+        const btn = $('btn-pan-ingresar'); UI.mostrar('pan-login-error', false); UI.ocupado(btn, true, 'Verificando…');
+        try { await Staff.ingresar($('pan-pin').value, $('pan-actor').value); $('pan-pin').value = ''; mostrar(); }
+        catch (e) { $('pan-login-error').textContent = e.message === 'SIN_CONEXION' ? UI.mensajeError(e) : e.message; UI.mostrar('pan-login-error', true); }
+        finally { UI.ocupado(btn, false); }
+      }
+
+      function salir() { detenerAuto(); Staff.salir(); mostrar(); }
+      function iniciarAuto() { detenerAuto(); timer = setInterval(refrescar, APP.refrescoPanelMs); }
+      function detenerAuto() { if (timer) { clearInterval(timer); timer = null; } }
+
+      async function refrescar() {
+        const s = Staff.sesion(); if (!s) return;
+        try {
+          const [st, filas] = await Promise.all([Api.get({ action: 'stats', pin: s.pin }), Datos.lista(true)]);
+          if (!st.ok) { if (st.error === 'PIN_INVALIDO') { UI.toast('El PIN cambió. Vuelve a ingresar.', 'error'); salir(); } return; }
+          const k = st.stats;
+          $('k-total').textContent = k.total; $('k-derecho').textContent = k.conDerecho; $('k-tardios').textContent = k.tardios;
+          $('k-sol').textContent = k.solicitados; $('k-ent').textContent = k.entregados; $('k-pend').textContent = k.pendientes;
+          $('pan-hora').textContent = UI.hora(k.hora);
+          if (st.config) renderEstado(Config.establecer(st.config));
+          filasActuales = filas; renderTabla();
+        } catch (e) { UI.toast(UI.mensajeError(e), 'error'); }
+      }
+
+      function renderEstado(c) {
+        config = c;
+        const ea = $('est-almuerzo'), er = $('est-registro');
+        ea.textContent = c.almuerzoVigente ? 'ABIERTO' : 'CERRADO' + (c.corteAlmuerzo ? ' desde ' + c.corteAlmuerzo : '');
+        ea.className = c.almuerzoVigente ? 'abierto' : 'cerrado';
+        er.textContent = c.registroAbierto ? 'ABIERTO' : 'CERRADO';
+        er.className = c.registroAbierto ? 'abierto' : 'cerrado';
+        UI.mostrar('btn-cerrar-almuerzo', c.almuerzoVigente);
+        UI.mostrar('btn-reabrir-almuerzo', !c.almuerzoVigente);
+        $('btn-toggle-registro').textContent = c.registroAbierto ? 'Cerrar registro' : 'Abrir registro';
+      }
+
+      async function setConfig(clave, valor, btn, confirmacion) {
+        const s = Staff.sesion(); if (!s) { mostrar(); return; }
+        if (confirmacion && !confirm(confirmacion)) return;
+        UI.ocupado(btn, true, 'Guardando…');
+        try {
+          const r = await Api.post({ action: 'config_set', clave, valor, pin: s.pin, actor: s.actor });
+          if (!r.ok) { UI.toast(UI.errorApi(r), 'error'); if (r.error === 'PIN_INVALIDO') salir(); return; }
+          renderEstado(Config.establecer(r.config)); UI.toast('Guardado', 'ok');
+        } catch (e) { UI.toast(UI.mensajeError(e), 'error'); }
+        finally { UI.ocupado(btn, false); }
+      }
+
+      function renderTabla() {
+        const q = UI.sinAcentos($('pan-q').value.trim());
+        const res = filasActuales.filter((f) => !q || String(f.dni).includes(q) || UI.sinAcentos(f.nombres).includes(q));
+        $('pan-tbody').innerHTML = res.map((f) => '<tr><td>' + UI.esc(f.nombres) + '</td><td>' + UI.esc(f.dni) + '</td><td>' + (f.tipo === 'TRABAJADOR' ? 'Trab.' : 'Inv.') +
+          '</td><td>' + (f.derecho === 'NO' ? '<span class="tardio-txt">No (después del cierre)</span>' : '<span class="si">Sí</span>') +
+          '</td><td class="' + (f.solicitado === 'SI' ? 'si' : 'no') + '">' + (f.solicitado === 'SI' ? 'Sí' : 'No') + '</td><td class="' + (f.entregado === 'SI' ? 'si' : 'no') + '">' +
+          (f.entregado === 'SI' ? 'Sí ' + UI.esc(UI.hora(f.fechaEntrega)) : 'No') + '</td><td>' + UI.esc(UI.hora(f.fechaRegistro)) + '</td></tr>').join('');
+        $('pan-conteo').textContent = res.length + ' de ' + filasActuales.length + ' asistentes';
+      }
+
+      function exportar() {
+        if (!window.XLSX) { UI.toast('No cargó la librería de Excel.', 'error'); return; }
+        if (!filasActuales.length) { UI.toast('No hay datos para exportar.', 'error'); return; }
+        const datos = filasActuales.map((f) => ({
+          'ID': f.id, 'DNI': f.dni, 'NOMBRES': f.nombres, 'TIPO': f.tipo, 'FICHA': f.ficha, 'AREA': f.area, 'FECHA_REGISTRO': f.fechaRegistro,
+          'DERECHO_ALMUERZO': f.derecho, 'ALMUERZO_SOLICITADO': f.solicitado, 'FECHA_SOLICITUD': f.fechaSolicitud,
+          'ALMUERZO_ENTREGADO': f.entregado, 'FECHA_ENTREGA': f.fechaEntrega, 'ENTREGADO_POR': f.entregadoPor, 'ORIGEN': f.origen
+        }));
+        const ws = XLSX.utils.json_to_sheet(datos);
+        ws['!cols'] = [12, 11, 34, 12, 8, 30, 20, 10, 10, 20, 10, 20, 16, 10].map((w) => ({ wch: w }));
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'ASISTENTES');
+        XLSX.writeFile(wb, 'asistentes-smilagros-2026.xlsx');
+      }
+
+      function qrEvento() {
+        const u = new URL(location.href); u.hash = ''; u.search = '';
+        const cont = $('qr-evento'); cont.innerHTML = '';
+        if (window.QRCode) new QRCode(cont, { text: u.toString(), width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M });
+        $('qr-evento-url').textContent = u.toString();
+        UI.mostrar('modal-qr-evento', true);
+      }
+
+      function enlazar() {
+        $('btn-pan-ingresar').addEventListener('click', ingresar);
+        $('pan-actor').addEventListener('keydown', (e) => { if (e.key === 'Enter') ingresar(); });
+        $('btn-pan-salir').addEventListener('click', salir);
+        $('btn-pan-refrescar').addEventListener('click', refrescar);
+        $('btn-pan-excel').addEventListener('click', exportar);
+        $('btn-pan-qr').addEventListener('click', qrEvento);
+        $('pan-q').addEventListener('input', renderTabla);
+        $('btn-imprimir-qr').addEventListener('click', () => window.print());
+        $('btn-cerrar-qr').addEventListener('click', () => UI.mostrar('modal-qr-evento', false));
+        $('btn-cerrar-almuerzo').addEventListener('click', (e) => setConfig('CORTE_ALMUERZO', 'AHORA', e.currentTarget,
+          '¿Cerrar el registro de almuerzos? Desde ahora, los nuevos registros quedarán solo como asistencia. Los ya registrados no cambian.'));
+        $('btn-reabrir-almuerzo').addEventListener('click', (e) => setConfig('CORTE_ALMUERZO', '', e.currentTarget,
+          '¿Reabrir el registro de almuerzos para los nuevos registros? (Los registrados después del cierre siguen solo como asistencia.)'));
+        $('btn-toggle-registro').addEventListener('click', (e) => {
+          const abierto = !config || config.registroAbierto;
+          setConfig('REGISTRO_ABIERTO', abierto ? 'NO' : 'SI', e.currentTarget, abierto ? '¿Cerrar el registro de asistentes? Nadie más podrá registrarse.' : '¿Abrir el registro de asistentes?');
+        });
+      }
+
+      return { mostrar, enlazar, detenerAuto };
+    })();
+
+    // ========================================================================
+    // Router — vistas por hash
+    // ========================================================================
+    const Router = (() => {
+      const vistas = { registro: 'view-registro', kiosco: 'view-registro', ticket: 'view-ticket', validador: 'view-validador', panel: 'view-panel' };
+      function actual() { const h = (location.hash || '#registro').slice(1).toLowerCase(); return vistas[h] ? h : 'registro'; }
+      function ir(v) { if (actual() === v) render(); else location.hash = '#' + v; }
+      function render() {
+        const v = actual();
+        Validador.detenerCamara(); Panel.detenerAuto();
+        document.querySelectorAll('.view').forEach((s) => s.classList.add('oculto'));
+        $(vistas[v]).classList.remove('oculto');
+        if (v === 'registro') Registro.mostrar(false);
+        if (v === 'kiosco') Registro.mostrar(true);
+        if (v === 'ticket') Ticket.mostrar();
+        if (v === 'validador') Validador.mostrar();
+        if (v === 'panel') Panel.mostrar();
+        window.scrollTo(0, 0);
+      }
+      window.addEventListener('hashchange', render);
+      return { actual, ir, render };
+    })();
+
+    // ========================================================================
+    // Arranque
+    // ========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      Registro.enlazar(); Ticket.enlazar(); Validador.enlazar(); Panel.enlazar();
+      $('acerca-version').textContent = APP.version;
+      $('lnk-acerca').addEventListener('click', (e) => { e.preventDefault(); UI.mostrar('modal-acerca', true); });
+      $('btn-cerrar-acerca').addEventListener('click', () => UI.mostrar('modal-acerca', false));
+      UI.mostrar('banner-config', APP.GAS_URL.includes('REEMPLAZAR'));
+      if (Storage.leerTicket()) UI.mostrar('lnk-ticket', true);
+      // RF-04: quien ya tiene ticket entra directo a él
+      if (!location.hash && Storage.leerTicket()) location.replace('#ticket');
+      Router.render();
+    });
+  </script>
+</body>
+</html>

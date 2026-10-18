@@ -1,0 +1,9 @@
+{
+  "name": "smilagros-qr-tests",
+  "private": true,
+  "description": "Pruebas automáticas (jsdom) de index.html y Code.gs — ejecutar en LAPTOP PERSONAL (npm bloqueado en la red SEDAPAL)",
+  "scripts": {
+    "test": "node test-app.js ../../index.html && node test-gas.js ../../gas/Code.gs"
+  },
+  "dependencies": { "jsdom": "^24.0.0" }
+}
