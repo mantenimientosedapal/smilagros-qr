@@ -231,15 +231,16 @@
             </div>
           </div>
           <div class="campo" id="campo-ficha">
-            <label for="f-ficha">Ficha <span class="muted">(completa tu nombre desde el padrón)</span></label>
+            <label for="f-ficha">Ficha <span class="muted">(tu nombre se completa desde el padrón)</span></label>
             <input id="f-ficha" inputmode="numeric" maxlength="6" placeholder="Ej. 24881" autocomplete="off">
+            <div class="error-campo" id="e-ficha"></div>
           </div>
-          <div class="campo">
+          <div class="campo oculto" id="campo-dni">
             <label for="f-dni">DNI <span class="muted">(8 dígitos · CE 9 dígitos)</span></label>
             <input id="f-dni" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Ej. 71234567">
             <div class="error-campo" id="e-dni"></div>
-            <div id="aviso-registrado" class="aviso-amarillo oculto">Este DNI ya está registrado. <button type="button" class="link" id="btn-ver-existente">Ver el ticket</button></div>
-          </div>
+            </div>
+          <div id="aviso-registrado" class="aviso-amarillo oculto">Ya estás registrado. <button type="button" class="link" id="btn-ver-existente">Ver mi ticket</button></div>
           <div class="campo">
             <label for="f-nombres">Nombres y apellidos</label>
             <input id="f-nombres" autocomplete="name" maxlength="80" placeholder="Ej. MARÍA PÉREZ QUISPE">
@@ -319,7 +320,7 @@
           </div>
           <div id="tab-buscar" class="oculto">
             <div class="card">
-              <div class="campo"><label for="val-q">DNI o nombre</label><input id="val-q" placeholder="Escribe al menos 3 caracteres" autocomplete="off"></div>
+              <div class="campo"><label for="val-q">Ficha, DNI o nombre</label><input id="val-q" placeholder="Escribe al menos 3 caracteres" autocomplete="off"></div>
               <div id="val-resultados" class="lista"><p class="muted small">Escribe para buscar.</p></div>
             </div>
           </div>
@@ -368,10 +369,10 @@
             <a class="btn btn-ghost btn-sm oculto" id="lnk-sheet" target="_blank" rel="noopener">Abrir hoja</a>
           </div>
           <div class="card">
-            <div class="campo"><input id="pan-q" placeholder="Buscar por DNI o nombre" autocomplete="off"></div>
+            <div class="campo"><input id="pan-q" placeholder="Buscar por ficha, DNI o nombre" autocomplete="off"></div>
             <div class="tabla-wrap">
               <table class="tabla">
-                <thead><tr><th>Nombres</th><th>DNI</th><th>Tipo</th><th>Almuerzo</th><th>Solicitó</th><th>Entregado</th><th>Registro</th></tr></thead>
+                <thead><tr><th>Nombres</th><th>Ficha / DNI</th><th>Tipo</th><th>Almuerzo</th><th>Solicitó</th><th>Entregado</th><th>Registro</th></tr></thead>
                 <tbody id="pan-tbody"></tbody>
               </table>
             </div>
@@ -395,7 +396,7 @@
   <div id="modal-acerca" class="modal oculto">
     <div class="modal-caja">
       <h3>Registro QR · Señor de los Milagros 2026</h3>
-      <p class="muted small">Versión <span id="acerca-version">1.1.1</span></p>
+      <p class="muted small">Versión <span id="acerca-version">1.2.0</span></p>
       <p style="margin-top:10px">Herramienta interna para el registro de asistentes y la entrega de almuerzos del Equipo Gestión Comercial y Micromedición (EGCM).</p>
       <div class="logos">
         <img data-logo="sedapal" alt="SEDAPAL">
@@ -425,7 +426,7 @@
     // CONFIG (lo único que se edita a mano)
     // ========================================================================
     const APP = {
-      version: '1.1.1',
+      version: '1.2.0',
       // URL del Web App de Apps Script (Implementar → Aplicación web → URL que termina en /exec)
       GAS_URL: 'https://script.google.com/macros/s/AKfycbxG_NdSiRvWYwyhzlhzsWml-rrfAausZrFjfy8zt-w1dnftx4mN9TXc0QNzQ8ElYlBEcw/exec',
       // Opcional: enlace a la hoja de cálculo para el botón «Abrir hoja» del panel
@@ -507,6 +508,7 @@
         else { btn.textContent = btn.dataset.txt || btn.textContent; btn.disabled = false; }
       },
       mostrar(el, visible) { (typeof el === 'string' ? $(el) : el).classList.toggle('oculto', !visible); },
+      doc(t) { return t.tipo === 'TRABAJADOR' && t.ficha ? 'Ficha ' + t.ficha : (t.dni ? 'DNI ' + t.dni : (t.ficha ? 'Ficha ' + t.ficha : 'Sin documento')); },
       hora(fecha) { const m = /(\d{2}):(\d{2})(?::\d{2})?$/.exec(fecha || ''); return m ? m[1] + ':' + m[2] : (fecha || ''); },
       sinAcentos(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); },
       esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); },
@@ -593,59 +595,60 @@
     // Registro (RF-01, RF-02, RF-03, RF-11)
     // ========================================================================
     const Registro = (() => {
-      const estado = { kiosco: false, tipo: 'TRABAJADOR', dniRegistrado: '' };
+      const estado = { kiosco: false, tipo: 'TRABAJADOR', docRegistrado: '' };
 
       async function mostrar(esKiosco) {
         estado.kiosco = !!esKiosco;
         UI.mostrar('reg-kiosco-badge', estado.kiosco);
         UI.mostrar('card-recuperar', !estado.kiosco);
-        if (estado.kiosco) limpiar();
+        if (estado.kiosco) limpiar(); else setTipo(estado.tipo);
         Config.cargar(true);
       }
 
       function limpiar() {
         ['f-dni', 'f-nombres', 'f-ficha', 'f-area'].forEach((id) => { $(id).value = ''; $(id).classList.remove('invalido'); });
-        $('e-dni').textContent = ''; $('e-nombres').textContent = '';
+        $('e-dni').textContent = ''; $('e-nombres').textContent = ''; $('e-ficha').textContent = '';
         $('f-almuerzo').checked = Config.actual().almuerzoVigente;
         UI.mostrar('aviso-registrado', false); UI.mostrar('reg-error', false);
         setTipo('TRABAJADOR');
-        estado.dniRegistrado = '';
+        estado.docRegistrado = '';
       }
 
       function setTipo(tipo) {
         estado.tipo = tipo;
         document.querySelectorAll('.segmento .seg').forEach((b) => b.classList.toggle('activo', b.dataset.tipo === tipo));
         UI.mostrar('campo-ficha', tipo === 'TRABAJADOR');
+        UI.mostrar('campo-dni', tipo !== 'TRABAJADOR');
+        UI.mostrar('aviso-registrado', false); estado.docRegistrado = '';
         $('lbl-area').innerHTML = (tipo === 'TRABAJADOR' ? 'Área' : 'Empresa o institución') + ' <span class="muted">(opcional)</span>';
       }
 
       function dniNormalizado() { return $('f-dni').value.replace(/[\s.\-]/g, '').toUpperCase(); }
+      function fichaNormalizada() { return $('f-ficha').value.replace(/\D/g, '').replace(/^0+/, ''); }
 
       async function autocompletar() {
         const dni = dniNormalizado();
-        UI.mostrar('aviso-registrado', false); estado.dniRegistrado = '';
+        UI.mostrar('aviso-registrado', false); estado.docRegistrado = '';
         if (!/^[A-Z0-9]{8,12}$/.test(dni)) return;
         try {
           const r = await Api.get({ action: 'buscar', dni });
           if (!r.ok) return;
-          if (r.registrado) { estado.dniRegistrado = dni; UI.mostrar('aviso-registrado', true); }
-          if (r.padron) {
-            if (!$('f-nombres').value.trim()) $('f-nombres').value = r.padron.nombres || '';
-            if (r.padron.ficha) { setTipo('TRABAJADOR'); $('f-ficha').value = r.padron.ficha; }
-            if (!$('f-area').value.trim() && r.padron.area) $('f-area').value = r.padron.area;
-          }
+          if (r.registrado) { estado.docRegistrado = dni; UI.mostrar('aviso-registrado', true); }
+          if (r.padron && !$('f-nombres').value.trim()) $('f-nombres').value = r.padron.nombres || '';
         } catch (e) { /* sin red: el usuario escribe a mano */ }
       }
 
       // RF-02: el padrón ZHRPOS tiene ficha, nombres y área (sin DNI) → la ficha autocompleta
       async function buscarPorFicha() {
-        const ficha = $('f-ficha').value.replace(/\D/g, '');
-        if (ficha.length < 4) return;
+        const ficha = fichaNormalizada();
+        UI.mostrar('aviso-registrado', false); estado.docRegistrado = '';
+        if (ficha.length < 3) return;
         try {
           const r = await Api.get({ action: 'buscar', ficha });
-          if (r.ok && r.padron) {
+          if (!r.ok) return;
+          if (r.registrado) { estado.docRegistrado = ficha; UI.mostrar('aviso-registrado', true); }
+          if (r.padron) {
             $('f-nombres').value = r.padron.nombres || $('f-nombres').value;
-            if (!$('f-dni').value.trim() && r.padron.dni) $('f-dni').value = r.padron.dni;
             if (r.padron.area) $('f-area').value = r.padron.area;
           }
         } catch (e) {}
@@ -653,10 +656,12 @@
 
       function validar() {
         let ok = true;
-        const dni = dniNormalizado(), nombres = $('f-nombres').value.trim();
-        $('e-dni').textContent = ''; $('e-nombres').textContent = '';
-        $('f-dni').classList.remove('invalido'); $('f-nombres').classList.remove('invalido');
-        if (!/^[A-Z0-9]{8,12}$/.test(dni)) { $('e-dni').textContent = 'Escribe tu DNI de 8 dígitos (CE: 9).'; $('f-dni').classList.add('invalido'); ok = false; }
+        const dni = dniNormalizado(), ficha = fichaNormalizada(), nombres = $('f-nombres').value.trim();
+        $('e-dni').textContent = ''; $('e-nombres').textContent = ''; $('e-ficha').textContent = '';
+        ['f-dni', 'f-nombres', 'f-ficha'].forEach((id) => $(id).classList.remove('invalido'));
+        if (estado.tipo === 'TRABAJADOR') {
+          if (!/^\d{3,6}$/.test(ficha)) { $('e-ficha').textContent = 'Escribe tu ficha (3 a 6 dígitos).'; $('f-ficha').classList.add('invalido'); ok = false; }
+        } else if (!/^[A-Z0-9]{8,12}$/.test(dni)) { $('e-dni').textContent = 'Escribe tu DNI de 8 dígitos (CE: 9).'; $('f-dni').classList.add('invalido'); ok = false; }
         if (nombres.length < 5) { $('e-nombres').textContent = 'Escribe tus nombres y apellidos completos.'; $('f-nombres').classList.add('invalido'); ok = false; }
         return ok;
       }
@@ -669,8 +674,8 @@
         UI.ocupado(btn, true, 'Registrando…');
         try {
           const r = await Api.post({
-            action: 'registrar', dni: dniNormalizado(), nombres: $('f-nombres').value.trim(), tipo: estado.tipo,
-            ficha: estado.tipo === 'TRABAJADOR' ? $('f-ficha').value.trim() : '', area: $('f-area').value.trim(),
+            action: 'registrar', dni: estado.tipo === 'TRABAJADOR' ? '' : dniNormalizado(), nombres: $('f-nombres').value.trim(), tipo: estado.tipo,
+            ficha: estado.tipo === 'TRABAJADOR' ? fichaNormalizada() : '', area: $('f-area').value.trim(),
             almuerzo: $('f-almuerzo').checked ? 'SI' : 'NO', origen: estado.kiosco ? 'KIOSCO' : 'CELULAR'
           });
           if (!r.ok) { $('reg-error').textContent = UI.errorApi(r); UI.mostrar('reg-error', true); return; }
@@ -686,22 +691,22 @@
       }
 
       async function verExistente() {
-        const dni = estado.dniRegistrado || dniNormalizado();
-        if (!dni) return;
-        await recuperarPorDni(dni, $('btn-ver-existente'));
+        const doc = estado.docRegistrado || (estado.tipo === 'TRABAJADOR' ? fichaNormalizada() : dniNormalizado());
+        if (!doc) return;
+        await recuperarPorDoc(doc, $('btn-ver-existente'));
       }
 
       async function recuperar() {
-        const dni = prompt('Escribe tu DNI para recuperar tu ticket:');
-        if (dni === null) return;
-        await recuperarPorDni(dni.replace(/[\s.\-]/g, '').toUpperCase(), $('btn-recuperar'));
+        const doc = prompt('Escribe tu ficha (trabajador) o tu DNI (invitado) para recuperar tu ticket:');
+        if (doc === null) return;
+        await recuperarPorDoc(doc.replace(/[\s.\-]/g, '').toUpperCase(), $('btn-recuperar'));
       }
 
-      async function recuperarPorDni(dni, btn) {
-        if (!/^[A-Z0-9]{8,12}$/.test(dni)) { UI.toast('DNI inválido', 'error'); return; }
+      async function recuperarPorDoc(doc, btn) {
+        if (!/^[A-Z0-9]{3,12}$/.test(doc)) { UI.toast('Escribe tu ficha o tu DNI', 'error'); return; }
         UI.ocupado(btn, true, 'Buscando…');
         try {
-          const r = await Api.get({ action: 'ticket', dni });
+          const r = await Api.get({ action: 'ticket', doc });
           if (!r.ok) { UI.toast(UI.errorApi(r), 'error'); return; }
           Ticket.establecer(r.ticket, { kiosco: estado.kiosco });
           if (!estado.kiosco) Storage.guardarTicket(r.ticket);
@@ -715,7 +720,7 @@
         $('f-dni').addEventListener('blur', autocompletar);
         $('f-dni').addEventListener('input', () => { if (dniNormalizado().length === 8) autocompletar(); });
         $('f-ficha').addEventListener('blur', buscarPorFicha);
-        $('f-ficha').addEventListener('input', () => { if ($('f-ficha').value.replace(/\D/g, '').length === 5) buscarPorFicha(); });
+        $('f-ficha').addEventListener('input', () => { if (fichaNormalizada().length === 5) buscarPorFicha(); });
         document.querySelectorAll('.segmento .seg').forEach((b) => b.addEventListener('click', () => setTipo(b.dataset.tipo)));
         $('btn-ver-existente').addEventListener('click', verExistente);
         $('btn-recuperar').addEventListener('click', recuperar);
@@ -754,7 +759,7 @@
         $('tk-sub').textContent = tardio ? 'Constancia de asistencia · EGCM' : 'Ticket de almuerzo · EGCM';
         $('tk-id').textContent = t.id;
         $('tk-nombres').textContent = t.nombres;
-        $('tk-datos').textContent = 'DNI ' + t.dni + ' · ' + (t.tipo === 'TRABAJADOR' ? 'Trabajador SEDAPAL' + (t.ficha ? ' · Ficha ' + t.ficha : '') : 'Invitado') + (t.area ? ' · ' + t.area : '') + ' · Registro ' + UI.hora(t.fechaRegistro);
+        $('tk-datos').textContent = UI.doc(t) + ' · ' + (t.tipo === 'TRABAJADOR' ? 'Trabajador SEDAPAL' : 'Invitado') + (t.area ? ' · ' + t.area : '') + ' · Registro ' + UI.hora(t.fechaRegistro);
         const cs = $('chip-solicitado'), ce = $('chip-entregado');
         if (tardio) {
           cs.textContent = 'Asistencia registrada · ' + UI.hora(t.fechaRegistro); cs.className = 'chip';
@@ -922,8 +927,8 @@
       }
 
       function datos(t) {
-        return '<div class="r-nombre">' + UI.esc(t.nombres) + '</div><div class="r-datos">DNI ' + UI.esc(t.dni) + ' · ' +
-          (t.tipo === 'TRABAJADOR' ? 'Trabajador' + (t.ficha ? ' · Ficha ' + UI.esc(t.ficha) : '') : 'Invitado') + (t.area ? ' · ' + UI.esc(t.area) : '') +
+        return '<div class="r-nombre">' + UI.esc(t.nombres) + '</div><div class="r-datos">' + UI.esc(UI.doc(t)) + ' · ' +
+          (t.tipo === 'TRABAJADOR' ? 'Trabajador' : 'Invitado') + (t.area ? ' · ' + UI.esc(t.area) : '') +
           ' · Registro ' + UI.esc(UI.hora(t.fechaRegistro)) + ' · Solicitó: ' + (t.solicitado === 'SI' ? 'sí' : 'no') + '</div>';
       }
 
@@ -953,7 +958,7 @@
         const q = UI.sinAcentos($('val-q').value.trim()); const cont = $('val-resultados');
         if (q.length < 3) { cont.innerHTML = '<p class="muted small">Escribe al menos 3 caracteres.</p>'; return; }
         try {
-          const filtrar = (filas) => filas.filter((f) => String(f.dni).includes(q) || UI.sinAcentos(f.nombres).includes(q)).slice(0, 20);
+          const filtrar = (filas) => filas.filter((f) => String(f.dni).includes(q) || String(f.ficha).includes(q) || UI.sinAcentos(f.nombres).includes(q)).slice(0, 20);
           let res = filtrar(await Datos.lista());
           if (!res.length) res = filtrar(await Datos.lista(true)); // recién registrado (kiosco): refresca la lista una vez
           if (!res.length) { cont.innerHTML = '<p class="muted small">Sin resultados. ¿Está registrado? Puede registrarse en el kiosco.</p>'; return; }
@@ -962,7 +967,7 @@
             if (f.derecho === 'NO') estado = '<span class="tardio-txt">Después del cierre · ' + UI.esc(UI.hora(f.fechaRegistro)) + '</span>';
             else if (f.entregado === 'SI') estado = '<span class="si">Entregado ' + UI.esc(UI.hora(f.fechaEntrega)) + '</span>';
             else { estado = f.solicitado === 'SI' ? 'Solicitó' : 'No solicitó'; boton = '<button type="button" class="btn btn-ok btn-sm" data-id="' + UI.esc(f.id) + '">Entregar</button>'; }
-            return '<div class="item"><div><div class="i-nombre">' + UI.esc(f.nombres) + '</div><div class="i-datos">DNI ' + UI.esc(f.dni) + ' · ' +
+            return '<div class="item"><div><div class="i-nombre">' + UI.esc(f.nombres) + '</div><div class="i-datos">' + UI.esc(UI.doc(f)) + ' · ' +
               (f.tipo === 'TRABAJADOR' ? 'Trabajador' : 'Invitado') + ' · ' + estado + '</div></div>' + boton + '</div>';
           }).join('');
           cont.querySelectorAll('button[data-id]').forEach((b) => b.addEventListener('click', () => { enCurso = true; consultar(b.dataset.id); }));
@@ -1046,8 +1051,8 @@
 
       function renderTabla() {
         const q = UI.sinAcentos($('pan-q').value.trim());
-        const res = filasActuales.filter((f) => !q || String(f.dni).includes(q) || UI.sinAcentos(f.nombres).includes(q));
-        $('pan-tbody').innerHTML = res.map((f) => '<tr><td>' + UI.esc(f.nombres) + '</td><td>' + UI.esc(f.dni) + '</td><td>' + (f.tipo === 'TRABAJADOR' ? 'Trab.' : 'Inv.') +
+        const res = filasActuales.filter((f) => !q || String(f.dni).includes(q) || String(f.ficha).includes(q) || UI.sinAcentos(f.nombres).includes(q));
+        $('pan-tbody').innerHTML = res.map((f) => '<tr><td>' + UI.esc(f.nombres) + '</td><td>' + UI.esc(f.tipo === 'TRABAJADOR' ? f.ficha : f.dni) + '</td><td>' + (f.tipo === 'TRABAJADOR' ? 'Trab.' : 'Inv.') +
           '</td><td>' + (f.derecho === 'NO' ? '<span class="tardio-txt">No (después del cierre)</span>' : '<span class="si">Sí</span>') +
           '</td><td class="' + (f.solicitado === 'SI' ? 'si' : 'no') + '">' + (f.solicitado === 'SI' ? 'Sí' : 'No') + '</td><td class="' + (f.entregado === 'SI' ? 'si' : 'no') + '">' +
           (f.entregado === 'SI' ? 'Sí ' + UI.esc(UI.hora(f.fechaEntrega)) : 'No') + '</td><td>' + UI.esc(UI.hora(f.fechaRegistro)) + '</td></tr>').join('');
