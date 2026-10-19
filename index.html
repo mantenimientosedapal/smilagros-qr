@@ -47,10 +47,15 @@
       background: var(--sedapal-blue); color: #fff; padding: 10px 16px;
       display: flex; align-items: center; gap: 12px;
     }
-    .header-sedapal .logo { height: 40px; background: #fff; border-radius: 6px; padding: 2px 8px; }
+    .header-sedapal .logo { height: 36px; background: #fff; border-radius: 6px; padding: 2px 7px; }
     .header-sedapal .titulos { flex: 1; min-width: 0; }
     .header-sedapal .titulo { font-size: 17px; font-weight: 700; line-height: 1.2; }
     .header-sedapal .sub { font-size: 12px; opacity: .85; }
+    .header-sedapal .equipos { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
+    .header-sedapal .equipo { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; line-height: 1.25; opacity: .92; }
+    .header-sedapal .equipo b { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .4px; padding: 2px 7px; border-radius: 10px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.35); }
+    .header-sedapal .equipo span { min-width: 0; }
+    @media (min-width: 640px) { .header-sedapal .logo { height: 40px; } .header-sedapal .equipos { flex-direction: row; gap: 14px; } .header-sedapal .equipo { font-size: 12.5px; align-items: center; } }
     .hdr-link { color: #fff; font-size: 13px; text-decoration: none; border: 1px solid rgba(255,255,255,.6); padding: 8px 14px; border-radius: 20px; white-space: nowrap; }
 
     /* Pie */
@@ -126,6 +131,15 @@
 
     /* Staff: validador y panel */
     .barra-staff { display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin-bottom: 10px; color: var(--muted); }
+    .contador { background: linear-gradient(135deg, var(--sedapal-blue), #0a4f99); color: #fff; border-radius: var(--radio); padding: 14px 16px; margin-bottom: 12px;
+      display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,59,122,.25); }
+    .contador .c-label { font-size: 12px; letter-spacing: .6px; text-transform: uppercase; opacity: .85; }
+    .contador .c-num { font-size: 44px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .contador .c-num.pulso { animation: pulso .35s ease-out; }
+    @keyframes pulso { 0% { transform: scale(1.18); color: #b9f6ca; } 100% { transform: scale(1); color: #fff; } }
+    .contador .c-der { text-align: right; font-size: 13px; line-height: 1.5; opacity: .92; }
+    .contador .c-der b { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .contador .c-hora { font-size: 11px; opacity: .7; }
     .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
     .tab { flex: 1; min-height: 42px; padding: 8px 12px; border-radius: 10px; border: 1px solid #c9d3de; background: #fff; font-size: 15px; font-weight: 600; color: var(--sedapal-blue); cursor: pointer; }
     .tab.activo { background: var(--sedapal-blue); color: #fff; border-color: var(--sedapal-blue); }
@@ -201,7 +215,10 @@
     <img data-logo="sedapal" alt="SEDAPAL" class="logo">
     <div class="titulos">
       <div class="titulo" id="hdr-titulo">Señor de los Milagros 2026</div>
-      <div class="sub">Equipo Gestión Comercial y Micromedición (EGCM) · SEDAPAL</div>
+      <div class="equipos">
+        <div class="equipo"><b>EGCM</b><span>Equipo Gestión Comercial y Micromedición</span></div>
+        <div class="equipo"><b>ECRF</b><span>Equipo Control y Reducción de Fugas</span></div>
+      </div>
     </div>
     <a href="#ticket" id="lnk-ticket" class="hdr-link oculto">Mi ticket</a>
   </header>
@@ -220,7 +237,7 @@
         </div>
 
         <div id="reg-cerrado" class="card aviso-rojo oculto">El registro está cerrado. Si ya te registraste, usa «Recuperar mi ticket».</div>
-        <div id="reg-tardio" class="card aviso-amarillo oculto">El registro de desayunos ya se cerró. Puedes registrar tu asistencia; para cualquier consulta, acércate al personal del EGCM.</div>
+        <div id="reg-tardio" class="card aviso-amarillo oculto">El registro de desayunos ya se cerró. Puedes registrar tu asistencia; para cualquier consulta, acércate al personal del evento.</div>
 
         <form id="form-registro" class="card" novalidate>
           <div class="campo">
@@ -268,7 +285,7 @@
         <div class="ticket">
           <div class="ticket-banda" id="tk-banda">
             <div class="ticket-evento" id="tk-evento">Señor de los Milagros 2026</div>
-            <div class="ticket-sub" id="tk-sub">Ticket de desayuno · EGCM</div>
+            <div class="ticket-sub" id="tk-sub">Ticket de desayuno · EGCM · ECRF</div>
           </div>
           <div id="tk-aviso" class="aviso-amarillo oculto"></div>
           <div class="qr-wrap"><div id="qr"></div></div>
@@ -295,7 +312,7 @@
       <div class="container">
         <div class="card" id="val-login">
           <h2>Entrega de desayunos</h2>
-          <p class="muted" style="margin-bottom:14px">Acceso para el staff del EGCM.</p>
+          <p class="muted" style="margin-bottom:14px">Acceso para el staff del evento.</p>
           <div class="campo"><label for="val-pin">PIN</label><input id="val-pin" type="password" inputmode="numeric" maxlength="12" autocomplete="off"></div>
           <div class="campo"><label for="val-actor">Tu nombre</label><input id="val-actor" maxlength="40" placeholder="Ej. ROSA"></div>
           <button type="button" class="btn btn-sedapal btn-block" id="btn-val-ingresar">Ingresar</button>
@@ -304,6 +321,10 @@
 
         <div id="val-ops" class="oculto">
           <div class="barra-staff"><span>Validador: <b id="val-actor-nombre"></b></span><button type="button" class="link" id="btn-val-salir">Salir</button></div>
+          <div class="contador" id="val-contador">
+            <div><div class="c-label">Desayunos entregados</div><div class="c-num" id="cnt-ent">0</div></div>
+            <div class="c-der"><div>Pendientes <b id="cnt-pend">0</b></div><div>Registrados <b id="cnt-total">0</b></div><div class="c-hora" id="cnt-hora">—</div></div>
+          </div>
           <div id="val-result" class="card resultado oculto"></div>
           <div class="tabs">
             <button type="button" class="tab activo" data-tab="escanear">Escanear</button>
@@ -396,8 +417,8 @@
   <div id="modal-acerca" class="modal oculto">
     <div class="modal-caja">
       <h3>Registro QR · Señor de los Milagros 2026</h3>
-      <p class="muted small">Versión <span id="acerca-version">1.3.0</span></p>
-      <p style="margin-top:10px">Herramienta interna para el registro de asistentes y la entrega de desayunos del Equipo Gestión Comercial y Micromedición (EGCM).</p>
+      <p class="muted small">Versión <span id="acerca-version">1.4.0</span></p>
+      <p style="margin-top:10px">Herramienta interna para el registro de asistentes y la entrega de desayunos del Equipo Gestión Comercial y Micromedición (EGCM) y el Equipo Control y Reducción de Fugas (ECRF).</p>
       <div class="logos">
         <img data-logo="sedapal" alt="SEDAPAL">
         <img data-logo="kolh" alt="">
@@ -426,7 +447,7 @@
     // CONFIG (lo único que se edita a mano)
     // ========================================================================
     const APP = {
-      version: '1.3.0',
+      version: '1.4.0',
       // URL del Web App de Apps Script (Implementar → Aplicación web → URL que termina en /exec)
       GAS_URL: 'https://script.google.com/macros/s/AKfycbxG_NdSiRvWYwyhzlhzsWml-rrfAausZrFjfy8zt-w1dnftx4mN9TXc0QNzQ8ElYlBEcw/exec',
       // Opcional: enlace a la hoja de cálculo para el botón «Abrir hoja» del panel
@@ -769,7 +790,7 @@
         else qr.textContent = t.id;
         const tardio = t.derecho === 'NO';
         $('tk-banda').classList.toggle('tardio', tardio);
-        $('tk-sub').textContent = tardio ? 'Constancia de asistencia · EGCM' : 'Ticket de desayuno · EGCM';
+        $('tk-sub').textContent = tardio ? 'Constancia de asistencia · EGCM · ECRF' : 'Ticket de desayuno · EGCM · ECRF';
         $('tk-id').textContent = t.id;
         $('tk-nombres').textContent = t.nombres;
         $('tk-datos').textContent = UI.doc(t) + ' · ' + (t.tipo === 'TRABAJADOR' ? 'Trabajador SEDAPAL' : 'Invitado') + (t.area ? ' · ' + t.area : '') + ' · Registro ' + UI.hora(t.fechaRegistro);
@@ -839,12 +860,30 @@
     // Validador (RF-06, RF-07, RF-13, RF-15)
     // ========================================================================
     const Validador = (() => {
-      let scanner = null, camaraActiva = false, enCurso = false, timerBusqueda = null;
+      let scanner = null, camaraActiva = false, enCurso = false, timerBusqueda = null, timerContador = null;
 
       function mostrar() {
         const s = Staff.sesion();
         UI.mostrar('val-login', !s); UI.mostrar('val-ops', !!s);
-        if (s) { $('val-actor-nombre').textContent = s.actor; limpiarResultado(); }
+        if (s) { $('val-actor-nombre').textContent = s.actor; limpiarResultado(); refrescarContador(); iniciarContador(); } else detenerContador();
+      }
+
+      // Contador de entregas para la zona de staff: se actualiza tras cada entrega y cada 15 s desde el servidor
+      function iniciarContador() { detenerContador(); timerContador = setInterval(refrescarContador, APP.refrescoPanelMs); }
+      function detenerContador() { if (timerContador) { clearInterval(timerContador); timerContador = null; } }
+      async function refrescarContador() {
+        const s = Staff.sesion(); if (!s) return;
+        try {
+          const r = await Api.get({ action: 'stats', pin: s.pin });
+          if (r.ok) pintarContador(r.stats);
+          else if (r.error === 'PIN_INVALIDO') { UI.toast('El PIN cambió. Vuelve a ingresar.', 'error'); salir(); }
+        } catch (e) { /* sin red: se mantiene el último valor */ }
+      }
+      function pintarContador(k) {
+        const n = $('cnt-ent');
+        if (n.textContent !== String(k.entregados)) { n.classList.remove('pulso'); void n.offsetWidth; n.classList.add('pulso'); }
+        n.textContent = k.entregados; $('cnt-pend').textContent = k.pendientes; $('cnt-total').textContent = k.total;
+        $('cnt-hora').textContent = 'Actualizado ' + UI.hora(k.hora);
       }
 
       async function ingresar() {
@@ -857,7 +896,7 @@
         } finally { UI.ocupado(btn, false); }
       }
 
-      function salir() { detenerCamara(); Staff.salir(); mostrar(); }
+      function salir() { detenerCamara(); detenerContador(); Staff.salir(); mostrar(); }
 
       function tab(nombre) {
         document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('activo', b.dataset.tab === nombre));
@@ -952,7 +991,7 @@
         const btn = $('btn-entregar'); UI.ocupado(btn, true, 'Registrando entrega…');
         try {
           const r = await Api.post({ action: 'entregar', id, pin: s.pin, actor: s.actor });
-          if (r.ok) { Datos.actualizar(r.ticket); renderResultado(r.ticket, 'ok'); UI.toast('Entrega registrada', 'ok'); refrescarBusqueda(); return; }
+          if (r.ok) { Datos.actualizar(r.ticket); renderResultado(r.ticket, 'ok'); UI.toast('Entrega registrada', 'ok'); refrescarBusqueda(); refrescarContador(); return; }
           if (r.error === 'YA_ENTREGADO' && r.ticket) { Datos.actualizar(r.ticket); renderResultado(r.ticket, 'ya'); return; }
           if (r.error === 'SIN_DERECHO' && r.ticket) { Datos.actualizar(r.ticket); renderResultado(r.ticket, 'sinderecho'); return; }
           if (r.error === 'PIN_INVALIDO') { UI.toast('El PIN cambió. Vuelve a ingresar.', 'error'); salir(); return; }
@@ -997,7 +1036,7 @@
         $('val-q').addEventListener('input', buscarInput);
       }
 
-      return { mostrar, enlazar, detenerCamara };
+      return { mostrar, enlazar, detenerCamara, detenerContador };
     })();
 
     // ========================================================================
@@ -1126,7 +1165,7 @@
       function ir(v) { if (actual() === v) render(); else location.hash = '#' + v; }
       function render() {
         const v = actual();
-        Validador.detenerCamara(); Panel.detenerAuto();
+        Validador.detenerCamara(); Validador.detenerContador(); Panel.detenerAuto();
         document.querySelectorAll('.view').forEach((s) => s.classList.add('oculto'));
         $(vistas[v]).classList.remove('oculto');
         if (v === 'registro') Registro.mostrar(false);

@@ -2,7 +2,7 @@
  * Registro QR · Señor de los Milagros 2026 — Backend (Google Apps Script, vinculado al Sheet)
  * Equipo Gestión Comercial y Micromedición (EGCM) · SEDAPAL
  * Desarrollado por Kilder Orlando Leyva Herrera – Ficha 24881 · Grupo Gestión de Servicios (GGSE) – ETIC
- * Versión 1.3.0 · 2026-10-19 (es DESAYUNO, no almuerzo; los nombres de columnas/claves conservan 'ALMUERZO' por compatibilidad con la hoja ya creada)
+ * Versión 1.3.1 · 2026-10-19 (misma persona registrada como trabajador y como invitado: se detecta por nombres y se devuelve el ticket original; el validador rechaza el segundo)
  *
  * Trazabilidad: ver docs/spec.md (RF-xx) y docs/diseno.md §6 (contrato de la API).
  *
@@ -18,7 +18,7 @@
 // ============================================================================
 // CONSTANTES
 // ============================================================================
-const VERSION = '1.3.0';
+const VERSION = '1.3.1';
 const TZ = 'America/Lima';
 const FMT_FECHA = 'dd/MM/yyyy HH:mm:ss';
 const PREFIJO_ID = 'SM26-';
@@ -192,6 +192,13 @@ function registrar_(p) {
 
   if (nombres.length < 5) return error_('DATOS_INVALIDOS', 'Escribe nombres y apellidos completos');
 
+  // Misma persona con otro tipo (p. ej. trabajador que vuelve a registrarse como invitado): se reconoce por los nombres
+  const homonimo = buscarPorNombres_(filas, nombres);
+  if (homonimo) {
+    log_('REGISTRO_DUPLICADO', homonimo.ID, dni || ('F' + ficha), actor, 'Mismos nombres que ' + homonimo.ID + ' (' + homonimo.TIPO + '): devuelve ticket existente');
+    return { ok: true, duplicado: true, ticket: ticketDesdeFila_(homonimo) };
+  }
+
   if (!esSi_(cfg.REGISTRO_ABIERTO)) {
     log_('REGISTRO', '', dni, actor, 'RECHAZADO: registro cerrado');
     return error_('REGISTRO_CERRADO', 'El registro está cerrado');
@@ -252,6 +259,12 @@ function entregar_(p) {
   if (fila.DERECHO_ALMUERZO === 'NO') {
     log_('ENTREGA_RECHAZADA', fila.ID, fila.DNI, actor, 'SIN_DERECHO registrado después del cierre ' + fila.FECHA_REGISTRO);
     return conTicket_(error_('SIN_DERECHO', 'Registrado después del cierre de desayunos'), fila);
+  }
+  // Misma persona con dos registros (trabajador e invitado): si el otro ya recibió, este también cuenta como entregado
+  const otro = buscarPorNombres_(filas, fila.NOMBRES, fila.ID);
+  if (otro && otro.ALMUERZO_ENTREGADO === 'SI') {
+    log_('ENTREGA_RECHAZADA', fila.ID, fila.DNI, actor, 'YA_ENTREGADO en registro ' + otro.ID + ' ' + otro.FECHA_ENTREGA + ' por ' + otro.ENTREGADO_POR);
+    return conTicket_(error_('YA_ENTREGADO', 'Esta persona ya recibió su desayuno (registro ' + otro.ID + ')'), otro);
   }
   if (fila.ALMUERZO_ENTREGADO === 'SI') {
     // Reintento del mismo validador segundos después (respuesta perdida): misma entrega, no un rechazo
@@ -492,6 +505,24 @@ function normalizarTexto_(v) { return String(v || '').replace(/\s+/g, ' ').trim(
 function buscarPorDni_(filas, dni) {
   if (!dni) return null;
   return filas.find(function (f) { return normalizarDni_(f.DNI) === dni; }) || null;
+}
+/** Nombres comparables: sin tildes, sin dobles espacios, mayúsculas. 'ANGEL AREVALO' no iguala a 'ANGEL HERIBERTO AREVALO COLLANA':
+ *  se exige coincidencia exacta del texto completo, o que todas las palabras del más corto (mínimo 2) estén en el más largo en el mismo orden. */
+function claveNombres_(v) {
+  return normalizarTexto_(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z\u00d1 ]/g, '').replace(/\s+/g, ' ').trim();
+}
+function mismosNombres_(a, b) {
+  const x = claveNombres_(a), y = claveNombres_(b);
+  if (!x || !y) return false;
+  if (x === y) return true;
+  const corto = (x.length <= y.length ? x : y).split(' '), largo = (x.length <= y.length ? y : x).split(' ');
+  if (corto.length < 2) return false;
+  let i = 0;
+  for (let j = 0; j < largo.length && i < corto.length; j++) if (largo[j] === corto[i]) i++;
+  return i === corto.length;
+}
+function buscarPorNombres_(filas, nombres, excluirId) {
+  return filas.find(function (f) { return f.ID !== excluirId && mismosNombres_(f.NOMBRES, nombres); }) || null;
 }
 function buscarPorFicha_(filas, ficha) {
   if (!ficha) return null;
