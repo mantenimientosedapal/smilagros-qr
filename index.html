@@ -215,12 +215,12 @@
         <div class="card bienvenida">
           <div class="evento-nombre" id="reg-evento">Señor de los Milagros 2026</div>
           <div class="evento-fecha" id="reg-fecha">Martes 20 de octubre de 2026</div>
-          <p id="reg-mensaje" class="muted">Bienvenido. Regístrate con tu DNI para confirmar tu asistencia y tu almuerzo.</p>
+          <p id="reg-mensaje" class="muted">Bienvenido. Regístrate con tu ficha (o tu DNI si eres invitado) para confirmar tu asistencia y tu desayuno.</p>
           <div id="reg-kiosco-badge" class="badge oculto">MODO KIOSCO · registro asistido</div>
         </div>
 
         <div id="reg-cerrado" class="card aviso-rojo oculto">El registro está cerrado. Si ya te registraste, usa «Recuperar mi ticket».</div>
-        <div id="reg-tardio" class="card aviso-amarillo oculto">El registro de almuerzos ya se cerró. Puedes registrar tu asistencia; para cualquier consulta, acércate al personal del EGCM.</div>
+        <div id="reg-tardio" class="card aviso-amarillo oculto">El registro de desayunos ya se cerró. Puedes registrar tu asistencia; para cualquier consulta, acércate al personal del EGCM.</div>
 
         <form id="form-registro" class="card" novalidate>
           <div class="campo">
@@ -250,7 +250,7 @@
             <label for="f-area" id="lbl-area">Área <span class="muted">(opcional)</span></label>
             <input id="f-area" maxlength="60" placeholder="Ej. Equipo Gestión Comercial y Micromedición">
           </div>
-          <label class="check" id="check-almuerzo"><input type="checkbox" id="f-almuerzo" checked> <span>Deseo recibir almuerzo</span></label>
+          <label class="check" id="check-almuerzo"><input type="checkbox" id="f-almuerzo" checked> <span>Deseo recibir desayuno</span></label>
           <button type="submit" id="btn-registrar" class="btn btn-primary btn-block">Registrarme</button>
           <div id="reg-error" class="error-global oculto"></div>
         </form>
@@ -268,7 +268,7 @@
         <div class="ticket">
           <div class="ticket-banda" id="tk-banda">
             <div class="ticket-evento" id="tk-evento">Señor de los Milagros 2026</div>
-            <div class="ticket-sub" id="tk-sub">Ticket de almuerzo · EGCM</div>
+            <div class="ticket-sub" id="tk-sub">Ticket de desayuno · EGCM</div>
           </div>
           <div id="tk-aviso" class="aviso-amarillo oculto"></div>
           <div class="qr-wrap"><div id="qr"></div></div>
@@ -276,11 +276,11 @@
           <div class="ticket-nombre" id="tk-nombres">—</div>
           <div class="ticket-datos" id="tk-datos">—</div>
           <div class="chips">
-            <span class="chip" id="chip-solicitado">Almuerzo: no solicitado</span>
+            <span class="chip" id="chip-solicitado">Desayuno: no solicitado</span>
             <span class="chip" id="chip-entregado">Entrega: pendiente</span>
           </div>
-          <button type="button" class="btn btn-primary btn-block" id="btn-solicitar">Solicitar almuerzo</button>
-          <p class="muted centro small" id="tk-ayuda" style="margin-top:12px">Muestra este QR al recoger tu almuerzo. Toma una captura de pantalla por si te quedas sin señal.</p>
+          <button type="button" class="btn btn-primary btn-block" id="btn-solicitar">Solicitar desayuno</button>
+          <p class="muted centro small" id="tk-ayuda" style="margin-top:12px">Muestra este QR al recoger tu desayuno. Toma una captura de pantalla por si te quedas sin señal.</p>
           <div class="acciones">
             <button type="button" class="btn btn-ghost" id="btn-actualizar">Actualizar estado</button>
             <button type="button" class="btn btn-ghost" id="btn-otra-persona">Registrar a otra persona</button>
@@ -294,7 +294,7 @@
     <section id="view-validador" class="view oculto">
       <div class="container">
         <div class="card" id="val-login">
-          <h2>Entrega de almuerzos</h2>
+          <h2>Entrega de desayunos</h2>
           <p class="muted" style="margin-bottom:14px">Acceso para el staff del EGCM.</p>
           <div class="campo"><label for="val-pin">PIN</label><input id="val-pin" type="password" inputmode="numeric" maxlength="12" autocomplete="off"></div>
           <div class="campo"><label for="val-actor">Tu nombre</label><input id="val-actor" maxlength="40" placeholder="Ej. ROSA"></div>
@@ -333,7 +333,7 @@
       <div class="container">
         <div class="card" id="pan-login">
           <h2>Panel del organizador</h2>
-          <p class="muted" style="margin-bottom:14px">Contadores en vivo, control del corte de almuerzo, listado y exportación.</p>
+          <p class="muted" style="margin-bottom:14px">Contadores en vivo, control del corte de desayuno, listado y exportación.</p>
           <div class="campo"><label for="pan-pin">PIN</label><input id="pan-pin" type="password" inputmode="numeric" maxlength="12" autocomplete="off"></div>
           <div class="campo"><label for="pan-actor">Tu nombre</label><input id="pan-actor" maxlength="40" placeholder="Ej. CARLOS"></div>
           <button type="button" class="btn btn-sedapal btn-block" id="btn-pan-ingresar">Ingresar</button>
@@ -344,7 +344,7 @@
           <div class="barra-staff"><span>Actualizado: <b id="pan-hora">—</b></span><button type="button" class="link" id="btn-pan-salir">Salir</button></div>
           <div class="kpis">
             <div class="kpi"><div class="kpi-n" id="k-total">0</div><div class="kpi-l">Registrados</div></div>
-            <div class="kpi kpi-evento"><div class="kpi-n" id="k-derecho">0</div><div class="kpi-l">Con almuerzo</div></div>
+            <div class="kpi kpi-evento"><div class="kpi-n" id="k-derecho">0</div><div class="kpi-l">Con desayuno</div></div>
             <div class="kpi kpi-no"><div class="kpi-n" id="k-tardios">0</div><div class="kpi-l">Después del cierre</div></div>
             <div class="kpi"><div class="kpi-n" id="k-sol">0</div><div class="kpi-l">Solicitaron</div></div>
             <div class="kpi kpi-ok"><div class="kpi-n" id="k-ent">0</div><div class="kpi-l">Entregados</div></div>
@@ -352,14 +352,14 @@
           </div>
 
           <div class="card">
-            <div class="estado-linea"><span>Registro de almuerzos</span><b id="est-almuerzo" class="abierto">ABIERTO</b></div>
+            <div class="estado-linea"><span>Registro de desayunos</span><b id="est-almuerzo" class="abierto">ABIERTO</b></div>
             <div class="estado-linea"><span>Registro de asistentes</span><b id="est-registro" class="abierto">ABIERTO</b></div>
             <div class="acciones fila">
-              <button type="button" class="btn btn-danger btn-sm" id="btn-cerrar-almuerzo">Cerrar almuerzos</button>
-              <button type="button" class="btn btn-ghost btn-sm oculto" id="btn-reabrir-almuerzo">Reabrir almuerzos</button>
+              <button type="button" class="btn btn-danger btn-sm" id="btn-cerrar-almuerzo">Cerrar desayunos</button>
+              <button type="button" class="btn btn-ghost btn-sm oculto" id="btn-reabrir-almuerzo">Reabrir desayunos</button>
               <button type="button" class="btn btn-ghost btn-sm" id="btn-toggle-registro">Cerrar registro</button>
             </div>
-            <p class="muted small" style="margin-top:10px">Lo normal es retirar el QR del afiche cuando empiece el programa. Estos botones son el respaldo: «Cerrar almuerzos» deja los nuevos registros solo como asistencia; «Cerrar registro» no admite más registros. Los ya registrados no cambian.</p>
+            <p class="muted small" style="margin-top:10px">Lo normal es retirar el QR del afiche cuando empiece el programa. Estos botones son el respaldo: «Cerrar desayunos» deja los nuevos registros solo como asistencia; «Cerrar registro» no admite más registros. Los ya registrados no cambian.</p>
           </div>
 
           <div class="acciones fila" style="margin-bottom:14px">
@@ -372,7 +372,7 @@
             <div class="campo"><input id="pan-q" placeholder="Buscar por ficha, DNI o nombre" autocomplete="off"></div>
             <div class="tabla-wrap">
               <table class="tabla">
-                <thead><tr><th>Nombres</th><th>Ficha / DNI</th><th>Tipo</th><th>Almuerzo</th><th>Solicitó</th><th>Entregado</th><th>Registro</th></tr></thead>
+                <thead><tr><th>Nombres</th><th>Ficha / DNI</th><th>Tipo</th><th>Desayuno</th><th>Solicitó</th><th>Entregado</th><th>Registro</th></tr></thead>
                 <tbody id="pan-tbody"></tbody>
               </table>
             </div>
@@ -396,8 +396,8 @@
   <div id="modal-acerca" class="modal oculto">
     <div class="modal-caja">
       <h3>Registro QR · Señor de los Milagros 2026</h3>
-      <p class="muted small">Versión <span id="acerca-version">1.2.0</span></p>
-      <p style="margin-top:10px">Herramienta interna para el registro de asistentes y la entrega de almuerzos del Equipo Gestión Comercial y Micromedición (EGCM).</p>
+      <p class="muted small">Versión <span id="acerca-version">1.3.0</span></p>
+      <p style="margin-top:10px">Herramienta interna para el registro de asistentes y la entrega de desayunos del Equipo Gestión Comercial y Micromedición (EGCM).</p>
       <div class="logos">
         <img data-logo="sedapal" alt="SEDAPAL">
         <img data-logo="kolh" alt="">
@@ -411,7 +411,7 @@
   <div id="modal-qr-evento" class="modal oculto">
     <div class="modal-caja">
       <h3 id="qr-evento-titulo">Señor de los Milagros 2026</h3>
-      <p>Escanea para registrar tu asistencia y tu almuerzo</p>
+      <p>Escanea para registrar tu asistencia y tu desayuno</p>
       <div id="qr-evento"></div>
       <p class="url-evento" id="qr-evento-url"></p>
       <div class="acciones">
@@ -426,7 +426,7 @@
     // CONFIG (lo único que se edita a mano)
     // ========================================================================
     const APP = {
-      version: '1.2.0',
+      version: '1.3.0',
       // URL del Web App de Apps Script (Implementar → Aplicación web → URL que termina en /exec)
       GAS_URL: 'https://script.google.com/macros/s/AKfycbxG_NdSiRvWYwyhzlhzsWml-rrfAausZrFjfy8zt-w1dnftx4mN9TXc0QNzQ8ElYlBEcw/exec',
       // Opcional: enlace a la hoja de cálculo para el botón «Abrir hoja» del panel
@@ -519,9 +519,9 @@
         return 'Ocurrió un error: ' + cod;
       },
       errorApi(res) {
-        const m = { REGISTRO_CERRADO: 'El registro está cerrado.', SOLICITUD_CERRADA: 'La solicitud de almuerzos está cerrada.',
-          SIN_DERECHO: 'El registro de almuerzos ya se cerró.', DATOS_INVALIDOS: res.mensaje || 'Datos inválidos.',
-          NO_ENCONTRADO: 'No se encontró el registro.', PIN_INVALIDO: 'PIN incorrecto.', YA_ENTREGADO: 'Este almuerzo ya fue entregado.',
+        const m = { REGISTRO_CERRADO: 'El registro está cerrado.', SOLICITUD_CERRADA: 'La solicitud de desayunos está cerrada.',
+          SIN_DERECHO: 'El registro de desayunos ya se cerró.', DATOS_INVALIDOS: res.mensaje || 'Datos inválidos.',
+          NO_ENCONTRADO: 'No se encontró el registro.', PIN_INVALIDO: 'PIN incorrecto.', YA_ENTREGADO: 'Este desayuno ya fue entregado.',
           OCUPADO: 'Servidor ocupado, inténtalo de nuevo.', CLAVE_NO_EDITABLE: 'Esa opción no se cambia desde el panel.' };
         return m[res.error] || res.mensaje || ('Error: ' + res.error);
       }
@@ -533,7 +533,7 @@
     const Config = (() => {
       let cache = null, hora = 0;
       const porDefecto = { evento: 'Señor de los Milagros 2026', fecha: 'Martes 20 de octubre de 2026', lugar: '',
-        mensaje: 'Bienvenido. Regístrate con tu DNI para confirmar tu asistencia y tu almuerzo.',
+        mensaje: 'Bienvenido. Regístrate con tu ficha (o tu DNI si eres invitado) para confirmar tu asistencia y tu desayuno.',
         registroAbierto: true, solicitudAbierta: true, almuerzoVigente: true, corteAlmuerzo: '' };
       async function cargar(forzar) {
         if (cache && !forzar && Date.now() - hora < APP.cacheConfigMs) return cache;
@@ -595,7 +595,7 @@
     // Registro (RF-01, RF-02, RF-03, RF-11)
     // ========================================================================
     const Registro = (() => {
-      const estado = { kiosco: false, tipo: 'TRABAJADOR', docRegistrado: '' };
+      const estado = { kiosco: false, tipo: 'TRABAJADOR', docRegistrado: '', consulta: null, fichaConsultada: '' };
 
       async function mostrar(esKiosco) {
         estado.kiosco = !!esKiosco;
@@ -638,20 +638,28 @@
         } catch (e) { /* sin red: el usuario escribe a mano */ }
       }
 
-      // RF-02: el padrón ZHRPOS tiene ficha, nombres y área (sin DNI) → la ficha autocompleta
-      async function buscarPorFicha() {
+      // RF-02: el padrón ZHRPOS tiene ficha, nombres y área (sin DNI) → la ficha autocompleta.
+      // La consulta en curso se guarda en estado.consulta para que «Registrarme» la espere (evita validar con el nombre vacío).
+      function buscarPorFicha() {
         const ficha = fichaNormalizada();
-        UI.mostrar('aviso-registrado', false); estado.docRegistrado = '';
-        if (ficha.length < 3) return;
-        try {
-          const r = await Api.get({ action: 'buscar', ficha });
-          if (!r.ok) return;
-          if (r.registrado) { estado.docRegistrado = ficha; UI.mostrar('aviso-registrado', true); }
-          if (r.padron) {
-            $('f-nombres').value = r.padron.nombres || $('f-nombres').value;
-            if (r.padron.area) $('f-area').value = r.padron.area;
-          }
-        } catch (e) {}
+        if (ficha.length < 3) return Promise.resolve();
+        if (estado.consulta && estado.fichaConsultada === ficha) return estado.consulta;
+        UI.mostrar('aviso-registrado', false); estado.docRegistrado = ''; estado.fichaConsultada = ficha;
+        $('f-nombres').placeholder = 'Buscando en el padrón…';
+        estado.consulta = (async () => {
+          try {
+            const r = await Api.get({ action: 'buscar', ficha });
+            if (!r.ok || fichaNormalizada() !== ficha) return;
+            if (r.registrado) { estado.docRegistrado = ficha; UI.mostrar('aviso-registrado', true); }
+            if (r.padron) {
+              $('f-nombres').value = r.padron.nombres || $('f-nombres').value;
+              if (r.padron.area) $('f-area').value = r.padron.area;
+              $('e-nombres').textContent = ''; $('f-nombres').classList.remove('invalido');
+            }
+          } catch (e) { /* sin red: el usuario escribe a mano */ }
+          finally { $('f-nombres').placeholder = 'Ej. MARÍA PÉREZ QUISPE'; if (estado.fichaConsultada === ficha) estado.consulta = null; }
+        })();
+        return estado.consulta;
       }
 
       function validar() {
@@ -669,8 +677,13 @@
       async function enviar(ev) {
         ev.preventDefault();
         UI.mostrar('reg-error', false);
-        if (!validar()) return;
         const btn = $('btn-registrar');
+        // Trabajador: si la ficha es válida y aún no se consultó (o la consulta sigue en curso), esperar al padrón
+        if (estado.tipo === 'TRABAJADOR' && /^\d{3,6}$/.test(fichaNormalizada()) && $('f-nombres').value.trim().length < 5) {
+          UI.ocupado(btn, true, 'Buscando en el padrón…');
+          try { await buscarPorFicha(); } finally { UI.ocupado(btn, false); }
+        }
+        if (!validar()) return;
         UI.ocupado(btn, true, 'Registrando…');
         try {
           const r = await Api.post({
@@ -681,7 +694,7 @@
           if (!r.ok) { $('reg-error').textContent = UI.errorApi(r); UI.mostrar('reg-error', true); return; }
           let aviso = '';
           if (r.duplicado) aviso = 'Ya estabas registrado: este es tu ticket original.';
-          else if (r.ticket.derecho === 'NO') aviso = 'Tu asistencia quedó registrada. El registro de almuerzos ya se había cerrado.';
+          else if (r.ticket.derecho === 'NO') aviso = 'Tu asistencia quedó registrada. El registro de desayunos ya se había cerrado.';
           Ticket.establecer(r.ticket, { kiosco: estado.kiosco, aviso });
           if (!estado.kiosco) Storage.guardarTicket(r.ticket);
           Router.ir('ticket');
@@ -719,7 +732,7 @@
         $('form-registro').addEventListener('submit', enviar);
         $('f-dni').addEventListener('blur', autocompletar);
         $('f-dni').addEventListener('input', () => { if (dniNormalizado().length === 8) autocompletar(); });
-        $('f-ficha').addEventListener('blur', buscarPorFicha);
+        $('f-ficha').addEventListener('blur', () => { buscarPorFicha(); });
         $('f-ficha').addEventListener('input', () => { if (fichaNormalizada().length === 5) buscarPorFicha(); });
         document.querySelectorAll('.segmento .seg').forEach((b) => b.addEventListener('click', () => setTipo(b.dataset.tipo)));
         $('btn-ver-existente').addEventListener('click', verExistente);
@@ -756,7 +769,7 @@
         else qr.textContent = t.id;
         const tardio = t.derecho === 'NO';
         $('tk-banda').classList.toggle('tardio', tardio);
-        $('tk-sub').textContent = tardio ? 'Constancia de asistencia · EGCM' : 'Ticket de almuerzo · EGCM';
+        $('tk-sub').textContent = tardio ? 'Constancia de asistencia · EGCM' : 'Ticket de desayuno · EGCM';
         $('tk-id').textContent = t.id;
         $('tk-nombres').textContent = t.nombres;
         $('tk-datos').textContent = UI.doc(t) + ' · ' + (t.tipo === 'TRABAJADOR' ? 'Trabajador SEDAPAL' : 'Invitado') + (t.area ? ' · ' + t.area : '') + ' · Registro ' + UI.hora(t.fechaRegistro);
@@ -765,7 +778,7 @@
           cs.textContent = 'Asistencia registrada · ' + UI.hora(t.fechaRegistro); cs.className = 'chip';
           ce.textContent = ''; ce.className = 'chip oculto';
         } else {
-          cs.textContent = t.solicitado === 'SI' ? 'Almuerzo solicitado ✓' : 'Almuerzo: no solicitado';
+          cs.textContent = t.solicitado === 'SI' ? 'Desayuno solicitado ✓' : 'Desayuno: no solicitado';
           cs.className = 'chip ' + (t.solicitado === 'SI' ? 'ok' : 'pend');
           ce.textContent = t.entregado === 'SI' ? 'Entregado ' + UI.hora(t.fechaEntrega) + ' ✓' : 'Entrega: pendiente';
           ce.className = 'chip ' + (t.entregado === 'SI' ? 'ok' : '');
@@ -787,7 +800,7 @@
           const r = await Api.post({ action: 'solicitar', id: actual.id });
           if (!r.ok) { UI.toast(UI.errorApi(r), 'error'); if (r.ticket) { actual = r.ticket; render(r.ticket); } return; }
           actual = r.ticket; if (!opciones.kiosco) Storage.guardarTicket(r.ticket); render(r.ticket);
-          UI.toast('Almuerzo solicitado', 'ok');
+          UI.toast('Desayuno solicitado', 'ok');
         } catch (e) { UI.toast(UI.mensajeError(e), 'error'); }
         finally { UI.ocupado(btn, false); }
       }
@@ -906,14 +919,14 @@
         let html = '';
         if (estado === 'pendiente') {
           html = '<div class="r-estado">Pendiente de entrega</div>' + datos(t) +
-            '<div class="acciones"><button type="button" class="btn btn-ok btn-block" id="btn-entregar">ENTREGAR ALMUERZO</button>' +
+            '<div class="acciones"><button type="button" class="btn btn-ok btn-block" id="btn-entregar">ENTREGAR DESAYUNO</button>' +
             '<button type="button" class="btn btn-ghost btn-sm" id="btn-siguiente">Cancelar</button></div>';
         } else if (estado === 'ok') {
           html = '<div class="r-estado">✓ Entregado</div>' + datos(t) + btnSiguiente();
         } else if (estado === 'ya') {
           html = '<div class="r-estado">✗ Ya entregado · ' + UI.esc(UI.hora(t.fechaEntrega)) + ' · ' + UI.esc(t.entregadoPor) + '</div>' + datos(t) + btnSiguiente();
         } else if (estado === 'sinderecho') {
-          html = '<div class="r-estado">✗ Registrado después del cierre · ' + UI.esc(UI.hora(t.fechaRegistro)) + '</div>' + datos(t) + '<div class="r-datos" style="margin-top:6px">Sin almuerzo asignado. Si hay duda, consultar con el organizador.</div>' + btnSiguiente();
+          html = '<div class="r-estado">✗ Registrado después del cierre · ' + UI.esc(UI.hora(t.fechaRegistro)) + '</div>' + datos(t) + '<div class="r-datos" style="margin-top:6px">Sin desayuno asignado. Si hay duda, consultar con el organizador.</div>' + btnSiguiente();
         } else if (estado === 'no') {
           html = '<div class="r-estado">Ticket no encontrado</div><div class="r-nombre">' + UI.esc(extra) + '</div><div class="r-datos">Pide el DNI y usa «Buscar».</div>' + btnSiguiente();
         } else {
@@ -1092,9 +1105,9 @@
         $('btn-imprimir-qr').addEventListener('click', () => window.print());
         $('btn-cerrar-qr').addEventListener('click', () => UI.mostrar('modal-qr-evento', false));
         $('btn-cerrar-almuerzo').addEventListener('click', (e) => setConfig('CORTE_ALMUERZO', 'AHORA', e.currentTarget,
-          '¿Cerrar el registro de almuerzos? Desde ahora, los nuevos registros quedarán solo como asistencia. Los ya registrados no cambian.'));
+          '¿Cerrar el registro de desayunos? Desde ahora, los nuevos registros quedarán solo como asistencia. Los ya registrados no cambian.'));
         $('btn-reabrir-almuerzo').addEventListener('click', (e) => setConfig('CORTE_ALMUERZO', '', e.currentTarget,
-          '¿Reabrir el registro de almuerzos para los nuevos registros? (Los registrados después del cierre siguen solo como asistencia.)'));
+          '¿Reabrir el registro de desayunos para los nuevos registros? (Los registrados después del cierre siguen solo como asistencia.)'));
         $('btn-toggle-registro').addEventListener('click', (e) => {
           const abierto = !config || config.registroAbierto;
           setConfig('REGISTRO_ABIERTO', abierto ? 'NO' : 'SI', e.currentTarget, abierto ? '¿Cerrar el registro de asistentes? Nadie más podrá registrarse.' : '¿Abrir el registro de asistentes?');
