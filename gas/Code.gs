@@ -2,7 +2,7 @@
  * Registro QR · Señor de los Milagros 2026 — Backend (Google Apps Script, vinculado al Sheet)
  * Equipo Gestión Comercial y Micromedición (EGCM) · SEDAPAL
  * Desarrollado por Kilder Orlando Leyva Herrera – Ficha 24881 · Grupo Gestión de Servicios (GGSE) – ETIC
- * Versión 1.1.0 · 2026-10-18
+ * Versión 1.3.0 · 2026-10-19 (es DESAYUNO, no almuerzo; los nombres de columnas/claves conservan 'ALMUERZO' por compatibilidad con la hoja ya creada)
  *
  * Trazabilidad: ver docs/spec.md (RF-xx) y docs/diseno.md §6 (contrato de la API).
  *
@@ -10,15 +10,15 @@
  *   Ejecutar como: Yo · Acceso: Cualquier persona
  * Antes del primer uso: ejecutar setupInicial() una vez desde el editor (crea pestañas y CONFIG).
  *
- * Regla del evento (RF-15): solo tiene derecho a almuerzo quien se registra ANTES del corte.
- * El corte lo fija el organizador desde el panel («Cerrar almuerzo ahora») o por hora en CONFIG.
- * Quien se registra después queda como asistente sin almuerzo (DERECHO_ALMUERZO = NO).
+ * Regla del evento (RF-15): solo tiene derecho a desayuno quien se registra ANTES del corte.
+ * El corte lo fija el organizador desde el panel («Cerrar desayuno ahora») o por hora en CONFIG.
+ * Quien se registra después queda como asistente sin desayuno (DERECHO_ALMUERZO = NO).
  */
 
 // ============================================================================
 // CONSTANTES
 // ============================================================================
-const VERSION = '1.1.0';
+const VERSION = '1.3.0';
 const TZ = 'America/Lima';
 const FMT_FECHA = 'dd/MM/yyyy HH:mm:ss';
 const PREFIJO_ID = 'SM26-';
@@ -38,11 +38,11 @@ const CONFIG_DEFAULT = [
   ['EVENTO_NOMBRE', 'Señor de los Milagros 2026'],
   ['EVENTO_FECHA', 'Martes 20 de octubre de 2026'],
   ['EVENTO_LUGAR', ''],
-  ['MENSAJE_BIENVENIDA', 'Bienvenido. Regístrate con tu DNI para confirmar tu asistencia y tu almuerzo.'],
+  ['MENSAJE_BIENVENIDA', 'Bienvenido. Regístrate con tu ficha (o tu DNI si eres invitado) para confirmar tu asistencia y tu desayuno.'],
   ['PIN_VALIDADOR', '2026'],
   ['REGISTRO_ABIERTO', 'SI'],
   ['SOLICITUD_ABIERTA', 'SI'],
-  ['CORTE_ALMUERZO', ''],   // vacío = sin corte · 'dd/MM/yyyy HH:mm' = desde esa hora no hay derecho a almuerzo
+  ['CORTE_ALMUERZO', ''],   // vacío = sin corte · 'dd/MM/yyyy HH:mm' = desde esa hora no hay derecho a desayuno
   ['VERSION_DATOS', '2']
 ];
 
@@ -66,7 +66,9 @@ function setupInicial() {
   const cfg = hoja_('CONFIG');
   const existentes = {};
   leerTabla_('CONFIG').forEach(function (r) { existentes[String(r.CLAVE).trim().toUpperCase()] = true; });
-  CONFIG_DEFAULT.forEach(function (par) { if (!existentes[par[0]]) cfg.appendRow([par[0], par[1]]); });
+  CONFIG_DEFAULT.forEach(function (par) { if (!existentes[par[0]]) anexarFila_(cfg, [par[0], par[1]]); });
+  // Repara valores que Sheets haya convertido (p. ej. la fecha del evento) reescribiéndolos como texto
+  leerTabla_('CONFIG').forEach(function (r) { cfg.getRange(r._fila, 2).setNumberFormat('@').setValue(comoTexto_(r.VALOR)); });
   ss.setActiveSheet(hoja_('ASISTENTES'));
   Logger.log('setupInicial OK · hojas: ' + Object.keys(HOJAS).join(', ') + ' · versión ' + VERSION);
 }
@@ -82,7 +84,7 @@ function doGet(e) {
       case 'config': return responder_({ ok: true, config: configPublica_() });
       case 'buscar': return responder_(buscar_(p));
       case 'ticket': return responder_(ticket_(p));
-      case 'pin': return responder_(pinLogin_(p));
+      case 'pin': return responder_(conLock_(function () { return pinLogin_(p); }));
       case 'stats': return responder_(stats_(p));
       case 'lista': return responder_(lista_(p));
       default: return responder_(error_('ACCION_DESCONOCIDA', 'Acción no reconocida'));
@@ -106,7 +108,7 @@ function doPost(e) {
       case 'solicitar': return responder_(conLock_(function () { return solicitar_(p); }));
       case 'entregar': return responder_(conLock_(function () { return entregar_(p); }));
       case 'config_set': return responder_(conLock_(function () { return configSet_(p); }));
-      case 'rechazo': return responder_(rechazo_(p));
+      case 'rechazo': return responder_(conLock_(function () { return rechazo_(p); }));
       default: return responder_(error_('ACCION_DESCONOCIDA', 'Acción no reconocida'));
     }
   } catch (err) {
@@ -126,10 +128,9 @@ function buscar_(p) {
 
   const res = { ok: true, registrado: false, id: '', padron: null };
 
-  if (dni) {
-    const fila = buscarPorDni_(leerTabla_('ASISTENTES'), dni);
-    if (fila) { res.registrado = true; res.id = fila.ID; }
-  }
+  const asistentes = leerTabla_('ASISTENTES');
+  const fila = (dni && buscarPorDni_(asistentes, dni)) || (ficha && buscarPorFicha_(asistentes, ficha)) || null;
+  if (fila) { res.registrado = true; res.id = fila.ID; }
   const padron = leerTabla_('PADRON');
   const enPadron = padron.find(function (r) {
     return (dni && normalizarDni_(r.DNI) === dni) || (ficha && normalizarFicha_(r.FICHA) === ficha);
@@ -151,6 +152,11 @@ function ticket_(p) {
   let fila = null;
   if (p.id) fila = buscarPorId_(filas, p.id);
   else if (p.dni) fila = buscarPorDni_(filas, normalizarDni_(p.dni));
+  else if (p.ficha) fila = buscarPorFicha_(filas, normalizarFicha_(p.ficha));
+  else if (p.doc) { // «Recuperar mi ticket»: ficha (trabajador) o DNI (invitado)
+    const doc = String(p.doc).trim();
+    fila = buscarPorDni_(filas, normalizarDni_(doc)) || buscarPorFicha_(filas, normalizarFicha_(doc));
+  }
   if (!fila) return error_('NO_ENCONTRADO', 'No existe un registro con ese dato');
   return { ok: true, ticket: ticketDesdeFila_(fila) };
 }
@@ -166,15 +172,21 @@ function registrar_(p) {
   const origen = String(p.origen || '').toUpperCase() === 'KIOSCO' ? 'KIOSCO' : 'CELULAR';
   const actor = origen === 'KIOSCO' ? 'KIOSCO' : 'ASISTENTE';
 
-  if (!/^[A-Z0-9]{8,12}$/.test(dni)) return error_('DATOS_INVALIDOS', 'DNI inválido (8 dígitos)');
+  if (tipo === 'TRABAJADOR') {
+    if (!/^\d{3,6}$/.test(ficha)) return error_('DATOS_INVALIDOS', 'Ficha inválida (3 a 6 dígitos)');
+    if (dni && !/^[A-Z0-9]{8,12}$/.test(dni)) return error_('DATOS_INVALIDOS', 'DNI inválido (8 dígitos)');
+  } else if (!/^[A-Z0-9]{8,12}$/.test(dni)) {
+    return error_('DATOS_INVALIDOS', 'DNI inválido (8 dígitos)');
+  }
 
   const hoja = hoja_('ASISTENTES');
   const filas = leerTabla_('ASISTENTES');
 
-  // RF-03: un DNI ya registrado recupera su ticket aunque el resto de datos venga incompleto o el registro esté cerrado
-  const existente = buscarPorDni_(filas, dni);
+  // RF-03: quien ya está registrado (por ficha si es trabajador, por DNI si es invitado) recupera su ticket,
+  // aunque el resto de datos venga incompleto o el registro esté cerrado
+  const existente = (tipo === 'TRABAJADOR' ? buscarPorFicha_(filas, ficha) : null) || (dni ? buscarPorDni_(filas, dni) : null);
   if (existente) {
-    log_('REGISTRO_DUPLICADO', existente.ID, dni, actor, 'Devuelve ticket existente');
+    log_('REGISTRO_DUPLICADO', existente.ID, dni || ('F' + ficha), actor, 'Devuelve ticket existente');
     return { ok: true, duplicado: true, ticket: ticketDesdeFila_(existente) };
   }
 
@@ -185,7 +197,7 @@ function registrar_(p) {
     return error_('REGISTRO_CERRADO', 'El registro está cerrado');
   }
 
-  // RF-15: el derecho a almuerzo se fija en el momento del registro
+  // RF-15: el derecho a desayuno se fija en el momento del registro
   const derecho = almuerzoVigente_(cfg) ? 'SI' : 'NO';
   const almuerzo = derecho === 'SI' && esSi_(p.almuerzo) ? 'SI' : 'NO';
 
@@ -197,12 +209,12 @@ function registrar_(p) {
     ALMUERZO_SOLICITADO: almuerzo, FECHA_SOLICITUD: almuerzo === 'SI' ? ahora : '',
     ALMUERZO_ENTREGADO: 'NO', FECHA_ENTREGA: '', ENTREGADO_POR: '', ORIGEN: origen
   };
-  hoja.appendRow(HOJAS.ASISTENTES.map(function (c) { return nueva[c]; }));
-  log_('REGISTRO', id, dni, actor, 'OK ' + tipo + (derecho === 'NO' ? ' DESPUES_DEL_CIERRE sin almuerzo' : (almuerzo === 'SI' ? ' + almuerzo' : ' sin solicitar')));
+  anexarFila_(hoja, HOJAS.ASISTENTES.map(function (c) { return nueva[c]; }));
+  log_('REGISTRO', id, dni || ('F' + ficha), actor, 'OK ' + tipo + (derecho === 'NO' ? ' DESPUES_DEL_CIERRE sin desayuno' : (almuerzo === 'SI' ? ' + desayuno' : ' sin solicitar')));
   return { ok: true, duplicado: false, ticket: ticketDesdeFila_(nueva) };
 }
 
-/** RF-05: solicitar almuerzo desde el ticket (bajo lock) */
+/** RF-05: solicitar desayuno desde el ticket (bajo lock) */
 function solicitar_(p) {
   const cfg = config_();
   const filas = leerTabla_('ASISTENTES');
@@ -211,11 +223,11 @@ function solicitar_(p) {
   if (fila.ALMUERZO_SOLICITADO === 'SI') return { ok: true, ticket: ticketDesdeFila_(fila) };
   if (fila.DERECHO_ALMUERZO === 'NO') {
     log_('SOLICITUD', fila.ID, fila.DNI, 'ASISTENTE', 'RECHAZADA: registrado después del cierre');
-    return conTicket_(error_('SIN_DERECHO', 'El registro de almuerzos ya se cerró'), fila);
+    return conTicket_(error_('SIN_DERECHO', 'El registro de desayunos ya se cerró'), fila);
   }
   if (!esSi_(cfg.SOLICITUD_ABIERTA)) {
     log_('SOLICITUD', fila.ID, fila.DNI, 'ASISTENTE', 'RECHAZADA: solicitud cerrada');
-    return error_('SOLICITUD_CERRADA', 'La solicitud de almuerzos está cerrada');
+    return error_('SOLICITUD_CERRADA', 'La solicitud de desayunos está cerrada');
   }
   const ahora = ahora_();
   escribir_('ASISTENTES', fila._fila, { ALMUERZO_SOLICITADO: 'SI', FECHA_SOLICITUD: ahora });
@@ -224,7 +236,7 @@ function solicitar_(p) {
   return { ok: true, ticket: ticketDesdeFila_(fila) };
 }
 
-/** RF-06 / RF-07 / RF-15: entregar almuerzo (bajo lock, con PIN) */
+/** RF-06 / RF-07 / RF-15: entregar desayuno (bajo lock, con PIN) */
 function entregar_(p) {
   const actor = normalizarTexto_(p.actor).slice(0, 40) || 'VALIDADOR';
   if (!verificarPin_(p.pin)) {
@@ -239,7 +251,7 @@ function entregar_(p) {
   }
   if (fila.DERECHO_ALMUERZO === 'NO') {
     log_('ENTREGA_RECHAZADA', fila.ID, fila.DNI, actor, 'SIN_DERECHO registrado después del cierre ' + fila.FECHA_REGISTRO);
-    return conTicket_(error_('SIN_DERECHO', 'Registrado después del cierre de almuerzos'), fila);
+    return conTicket_(error_('SIN_DERECHO', 'Registrado después del cierre de desayunos'), fila);
   }
   if (fila.ALMUERZO_ENTREGADO === 'SI') {
     // Reintento del mismo validador segundos después (respuesta perdida): misma entrega, no un rechazo
@@ -247,7 +259,7 @@ function entregar_(p) {
       return { ok: true, repetido: true, ticket: ticketDesdeFila_(fila) };
     }
     log_('ENTREGA_RECHAZADA', fila.ID, fila.DNI, actor, 'YA_ENTREGADO ' + fila.FECHA_ENTREGA + ' por ' + fila.ENTREGADO_POR);
-    return conTicket_(error_('YA_ENTREGADO', 'Este almuerzo ya fue entregado'), fila);
+    return conTicket_(error_('YA_ENTREGADO', 'Este desayuno ya fue entregado'), fila);
   }
   const ahora = ahora_();
   const cambios = { ALMUERZO_ENTREGADO: 'SI', FECHA_ENTREGA: ahora, ENTREGADO_POR: actor };
@@ -281,7 +293,7 @@ function configSet_(p) {
   }
   const hoja = hoja_('CONFIG');
   const fila = leerTabla_('CONFIG').find(function (r) { return String(r.CLAVE).trim().toUpperCase() === clave; });
-  if (fila) hoja.getRange(fila._fila, 2).setValue(valor); else hoja.appendRow([clave, valor]);
+  if (fila) hoja.getRange(fila._fila, 2).setNumberFormat('@').setValue(comoTexto_(valor)); else anexarFila_(hoja, [clave, valor]);
   log_('CONFIG', '', '', actor, clave + ' = ' + (valor === '' ? '(vacío)' : valor));
   return { ok: true, config: configPublica_() };
 }
@@ -356,13 +368,31 @@ function escribir_(nombre, fila, cambios) {
   const cols = HOJAS[nombre];
   Object.keys(cambios).forEach(function (c) {
     const idx = cols.indexOf(c);
-    if (idx >= 0) hoja.getRange(fila, idx + 1).setValue(cambios[c]);
+    if (idx >= 0) hoja.getRange(fila, idx + 1).setNumberFormat('@').setValue(comoTexto_(cambios[c]));
   });
+}
+
+/**
+ * Añade una fila escribiendo primero el formato texto en el rango destino.
+ * appendRow() ignora el formato de columna y convierte '09746075' en 9746075 y las fechas en fechas (RNF-09).
+ */
+function anexarFila_(hoja, valores) {
+  const fila = hoja.getLastRow() + 1;
+  const rango = hoja.getRange(fila, 1, 1, valores.length);
+  rango.setNumberFormat('@');
+  rango.setValues([valores.map(comoTexto_)]);
+}
+
+/** Sheets interpreta lo que se escribe como si se tipeara; el apóstrofo inicial lo fuerza a texto y no se guarda */
+function comoTexto_(v) {
+  if (v === null || v === undefined) return '';
+  const s = (v instanceof Date) ? Utilities.formatDate(v, TZ, FMT_FECHA) : String(v);
+  return s === '' ? '' : "'" + s;
 }
 
 function log_(accion, id, dni, actor, resultado) {
   try {
-    hoja_('LOG').appendRow([ahora_(), accion, id || '', dni || '', actor || '', resultado || '']);
+    anexarFila_(hoja_('LOG'), [ahora_(), accion, id || '', dni || '', actor || '', resultado || '']);
   } catch (err) { /* la bitácora nunca debe tumbar la operación principal */ }
 }
 
@@ -372,6 +402,7 @@ function config_() {
   leerTabla_('CONFIG').forEach(function (r) {
     const k = String(r.CLAVE || '').trim().toUpperCase();
     if (k) cfg[k] = String(r.VALOR || '').trim();
+    if (k === 'EVENTO_FECHA' && /^\d{2}\/\d{2}\/\d{4} 00:00:00$/.test(cfg[k])) cfg[k] = fechaLarga_(cfg[k]);
   });
   return cfg;
 }
@@ -387,7 +418,7 @@ function configPublica_() {
   };
 }
 
-/** RF-15: ¿todavía hay derecho a almuerzo para quien se registre ahora? */
+/** RF-15: ¿todavía hay derecho a desayuno para quien se registre ahora? */
 function almuerzoVigente_(cfg) {
   const corte = parsearFecha_(cfg.CORTE_ALMUERZO);
   if (!corte) return true;                 // sin corte configurado
@@ -443,7 +474,7 @@ function segundosDesde_(texto) {
 function fmt_(v) {
   if (v === null || v === undefined) return '';
   if (v instanceof Date) return Utilities.formatDate(v, TZ, FMT_FECHA);
-  return String(v).trim();
+  return String(v).replace(/^'/, '').trim();
 }
 
 function esSi_(v) {
@@ -451,13 +482,29 @@ function esSi_(v) {
   return s === 'SI' || s === 'SÍ' || s === 'TRUE' || s === '1' || s === 'S';
 }
 
-function normalizarDni_(v) { return String(v || '').replace(/[\s.\-]/g, '').toUpperCase(); }
+function normalizarDni_(v) {
+  const s = String(v || '').replace(/[\s.\-]/g, '').toUpperCase();
+  return /^\d{7}$/.test(s) ? '0' + s : s; // celda convertida a número por Sheets: recupera el cero inicial
+}
 function normalizarFicha_(v) { return String(v || '').replace(/\D/g, '').replace(/^0+/, ''); }
 function normalizarTexto_(v) { return String(v || '').replace(/\s+/g, ' ').trim().toUpperCase(); }
 
 function buscarPorDni_(filas, dni) {
   if (!dni) return null;
   return filas.find(function (f) { return normalizarDni_(f.DNI) === dni; }) || null;
+}
+function buscarPorFicha_(filas, ficha) {
+  if (!ficha) return null;
+  return filas.find(function (f) { return f.TIPO === 'TRABAJADOR' && normalizarFicha_(f.FICHA) === ficha; }) || null;
+}
+/** '20/10/2026 00:00:00' → 'Martes 20 de octubre de 2026' */
+function fechaLarga_(texto) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(texto);
+  if (!m) return texto;
+  const d = new Date(m[3] + '-' + m[2] + '-' + m[1] + 'T12:00:00');
+  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'setiembre', 'octubre', 'noviembre', 'diciembre'];
+  return dias[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
 }
 function buscarPorId_(filas, id) {
   const buscado = String(id || '').trim().toUpperCase();
